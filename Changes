@@ -1,5 +1,8 @@
 Revision history for Perl extension DeltaX.
 
+3.06  Thu Jun  3 12:44:00 2003
+  - fixed bug in DeltaX::Page - perl error while using '*' as type
+
 3.05  Fri Jul  6 07:55:03 2003
   - DeltaX::Database
     - improved date2db() for MS SQL driver

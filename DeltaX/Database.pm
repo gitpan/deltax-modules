@@ -6,7 +6,7 @@
 # Author		: Martin Kula, 1999 <martin.kula@deltaes.com>
 #							to object model rewritten by
 #							Jakub Spicak <jakub.spicak@deltaes.cz>
-# $Id: Database.pm,v 1.14 2003/06/06 05:52:37 spicak Exp $
+# $Id: Database.pm,v 1.15 2003/07/03 10:45:52 spicak Exp $
 #
 
 package DeltaX::Database;

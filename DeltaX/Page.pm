@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Page;
 #-----------------------------------------------------------------
-# $Id: Page.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
+# $Id: Page.pm,v 1.2 2003/07/03 10:45:52 spicak Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -190,7 +190,7 @@ sub _special {
 	my $tmp = $1;
 	$tmp = '*' if !exists $self->{special}{$tmp};
 	unshift @args, $1 if $tmp eq '*';
-	return $self->{special}{$1}->(@args);
+	return $self->{special}{$tmp}->(@args);
 
 }
 # END OF _special
