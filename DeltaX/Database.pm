@@ -6,7 +6,7 @@
 # Author		: Martin Kula, 1999 <martin.kula@deltaes.com>
 #							to object model rewritten by
 #							Jakub Spicak <jakub.spicak@deltaes.cz>
-# $Id: Database.pm,v 1.12 2003/05/16 10:49:25 spicak Exp $
+# $Id: Database.pm,v 1.14 2003/06/06 05:52:37 spicak Exp $
 #
 
 package DeltaX::Database;
@@ -1115,7 +1115,10 @@ sub date2db {
 					return "TO_DATE(?, 'dd.mm.yyyy hh24:mi:ss')";
 				}
 			}
-			elsif (grep {$self->{driver} eq $_} ('Pg','Informix','Sybase','mssql','DB2','mysql','Solid')) {
+			elsif ($self->{driver} eq 'mssql') {
+				return "convert(datetime, ?, 120)";
+			}
+			elsif (grep {$self->{driver} eq $_} ('Pg','Informix','Sybase','DB2','mysql','Solid')) {
 				return '?';
 			}
 			else {
@@ -1299,24 +1302,26 @@ sub date2db {
 	elsif ($self->{driver} eq 'mssql') {
 		if ($type) {
 			if ($t) {
-				$odatetime = sprintf "'%02d.%02d.%04d %02d:%02d:%02d'",
-					$day, $mon, $year, $hour, $min, $sec;
+				$odatetime = sprintf "convert(datetime, '%04d-%02d-%02d %02d:%02d:%02d', 120)",
+					$year, $mon, $day, $hour, $min, $sec;
 			}
 			else {
-				$odatetime = sprintf "'%02d.%02d.%04d'", $day, $mon, $year;
+				$odatetime = sprintf "convert(datetime, '%04d-%02d-%02d %02d:%02d:%02d', 120)", 
+					$year, $mon, $day, 0, 0, 0;
 			}
 		} else {
 			if ($t) {
-				$odatetime = sprintf "%02d.%02d.%04d %02d:%02d:%02d",
-					$day, $mon, $year, $hour, $min, $sec;
+				$odatetime = sprintf "%04d-%02d-%02d %02d:%02d:%02d",
+					$year, $mon, $day, $hour, $min, $sec;
 			}
 			else {
-				$odatetime = sprintf "%02d.%02d.%04d", $day, $mon, $year;
+				$odatetime = sprintf "%04d-%02d-%02d %02d:%02d:%02d", 
+					$year, $mon, $day, 0, 0, 0;
 			}
 		}
 	}
 	else { # other drivers not supported
-                $Derror_message = "MODULE ERROR: DBD driver not supported";
+    $Derror_message = "MODULE ERROR: DBD driver not supported";
 		return undef;
 	}
 

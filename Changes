@@ -1,5 +1,9 @@
 Revision history for Perl extension DeltaX.
 
+3.05  Fri Jul  6 07:55:03 2003
+  - DeltaX::Database
+    - improved date2db() for MS SQL driver
+
 3.04  Fri May 16 12:54:00 2003
   - DeltaX::Database
     - new function test_err()
