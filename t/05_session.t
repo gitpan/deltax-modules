@@ -25,9 +25,10 @@ sub skip {
   my ($msg, $x) = @_;
 
   for (1..$x) {
-    print "skipped $num $msg\n";
+    print "ok $num # skip: $msg\n";
     $num++;
   }
+	local $^W = 0;
   last SKIP;
 }
 
@@ -55,6 +56,8 @@ SKIP: {
 		user => $dbuser, auth => $dbpassw
 	);
 	ok (ref $db);
+	skip ("Connection to database failed: ".$DeltaX::Database::Derror_message, 12)
+		if !ref $db;
 	ok ($db->isa('DeltaX::Database'));
 
 	# create test table
@@ -62,6 +65,10 @@ SKIP: {
 	if ($dbdriver eq 'Oracle') { $datetype = 'date'; }
 	if ($dbdriver eq 'Pg') { $datetype = 'timestamp'; }
 	if ($dbdriver eq 'mysql') { $datetype = 'timestamp'; }
+	if ($dbdriver eq 'Informix') { $datetype = 'datetime year to second'; }
+	if ($dbdriver eq 'DB2') { $datetype = 'timestamp'; }
+	if ($dbdriver eq 'Solid') { $datetype = 'timestamp'; }
+	if ($dbdriver eq 'mssql') { $datetype = 'datetime'; }
 	my $result = $db->command("CREATE TABLE deltax_db_test".
 		"(sid varchar(10), sdata varchar(250), ts $datetype)");
 	is ($result, 1, 'table created');

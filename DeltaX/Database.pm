@@ -6,7 +6,7 @@
 # Author		: Martin Kula, 1999 <martin.kula@deltaes.com>
 #							to object model rewritten by
 #							Jakub Spicak <jakub.spicak@deltaes.cz>
-# $Id: Database.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
+# $Id: Database.pm,v 1.4 2003/04/02 15:30:57 martin Exp $
 #
 
 package DeltaX::Database;
@@ -35,7 +35,7 @@ use Exporter;
 #########################################################################
 # Setting global module variables
 #########################################################################
-$DeltaX::Database::VERSION = '3.0';				# Module version
+$DeltaX::Database::VERSION = '3.1';				# Module version
 
 #########################################################################
 # Procedure declaration
@@ -78,11 +78,17 @@ sub new {
 
 	my $orig_driver = $self->{driver};
 	$self->{driver} = get_driver($self->{driver});
-	return -3 if ! $self->{driver};
+        if (! $self->{driver}) {
+                $Derror_message = "MODULE ERROR: Can't get a DBD driver";
+	        return -3;
+        }
 
 	my %attr = ('AutoCommit' => $self->{autocommit}, 'PrintError' => 0);
 	$self->{driver} = $self->get_source($self->{driver}, $self->{dbname});
-	return -4 if ! $self->{driver};
+        if (! $self->{driver}) {
+                $Derror_message = "MODULE ERROR: Can't get a DB source";
+	        return -4;
+        }
 
 	my ($user, $auth);
 	SWITCH: for ($self->{driver}) {
@@ -124,6 +130,7 @@ sub new {
 			$auth = $self->{auth};
 			last SWITCH;};
 		# Default (not supported)
+                $Derror_message = "MODULE ERROR: DBD driver not supported";
 		return -5;
 	}
 	$self->{conn} = DBI->connect($self->{driver}, $user, $auth, \%attr);
@@ -185,8 +192,14 @@ sub transaction_end {
 	}
 	my $result;
 
-	return -2 if ! $self->{conn};
-	return -1 if $self->{autocommit};
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -2;
+        }
+        if ($self->{autocommit}) {
+                $Derror_message = "MODULE ERROR: Autocommit ON";
+	        return -1;
+        }
 
 	if ($type_f or ! $self->{transaction}) {
 		if ($self->{driver} ne 'Oracle') {
@@ -219,8 +232,14 @@ sub select {
 	my $sql_command = shift;
 	my @ret_array;
 
-	return (-2) if ! defined $sql_command;
-	return (-3) if ! $self->{conn};
+        if (! defined $sql_command) {
+                $Derror_message = "MODULE ERROR: SQL command not defined";
+	        return (-2);
+        }
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return (-3);
+        }
 
 	$self->_stat_start('SELECT', $sql_command, undef);
 
@@ -281,10 +300,16 @@ sub open_cursor {
 	my $self = shift;
 	my $cursor_name = shift;
 
-	return -3 if !$self->{conn};
+        if (!$self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -3;
+        }
 
 	my $sql_command = shift;
-	return -2 if ! defined $sql_command;
+        if (! defined $sql_command) {
+                $Derror_message = "MODULE ERROR: SQL command not defined";
+	        return -2;
+        }
 
 	my $cursortype = $self->{cursor_type};
 	my $result;
@@ -431,11 +456,18 @@ sub fetch_cursor {
 	my @tmp_array;
 	my $cursor_name = shift;
 
-	return (-2) if ! defined $cursor_name;
-	return (-4) if ! $self->{conn};
+        if (! defined $cursor_name) {
+                $Derror_message = "MODULE ERROR: cursor not defined";
+	        return (-2);
+        }
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return (-4);
+        }
 
 	if ( not exists $self->{cursors}->{$cursor_name} 
 		or not defined $self->{cursors}->{$cursor_name}) {
+                $Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
 		return (-3);
 	}
 	$Dstr_command = $self->{cursors}->{$cursor_name}->[4];
@@ -491,11 +523,17 @@ sub close_cursor {
 	my $self = shift;
 	my $cursor_name = shift;
 
-	return -2 if ! defined $cursor_name;
-
-	return -4 if ! $self->{conn};
+        if (! defined $cursor_name) {
+                $Derror_message = "MODULE ERROR: cursor not defined";
+	        return -2;
+        }
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -4;
+        }
 
 	if ( not exists $self->{cursors}->{$cursor_name} ) {
+                $Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
 		return -3;
 	}
 	#$Dstr_command = $self->{cursors}->{$cursor_name}->[4];
@@ -514,6 +552,7 @@ sub exists_cursor {
 	return 0 if ! $cursor_name;
 	if ( not exists $self->{cursors}->{$cursor_name} 
 		or not defined $self->{cursors}->{$cursor_name}) {
+                $Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
 		return 0;
 	}
 	return 1;
@@ -528,19 +567,32 @@ sub open_statement {
 	my $statement_name = shift;
 	$statement_name = $self->{app} . $statement_name;
 
-	return -2 if ! defined $statement_name;
+        if (! defined $statement_name) {
+                $Derror_message = "MODULE ERROR: statement not defined";
+	        return -2;
+        }
 
 	my $sql_command = shift;
 
-	return -4 if ! $self->{conn};
-	return -2 if ! defined $statement_name || ! defined $sql_command;
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -4;
+        }
+
+        if (! defined $sql_command) {
+                $Derror_message = "MODULE ERROR: SQL command not defined";
+	        return -2;
+        }
 
 	my $is_select = 1 if uc($sql_command) =~ /^[	]*SELECT[  \n]/;
 	my @sqlc_tmp = $sql_command =~ /[\?\!]/g;
 	my $number_bval = scalar @sqlc_tmp;
 	$sql_command =~ s/\!/\?/g;
 	if ($#_ >= 0) {
-		return -3 if $number_bval != shift;
+                if ($number_bval != shift) {
+                        $Derror_message = "MODULE ERROR: Number of the bind value not matched";
+		        return -3;
+                } 
 	}
 
 	if ( exists $self->{statements}->{$statement_name} ) {
@@ -592,21 +644,31 @@ sub perform_statement {
 	my $statement_name = shift;
 	$statement_name = $self->{app} . $statement_name;
 
-	return (-2) if ! defined $statement_name;
+        if (! defined $statement_name) {
+                $Derror_message = "MODULE ERROR: statement name not defined";
+	        return (-2);
+        }
 
-	return -4 if ! $self->{conn};
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return (-4);
+        }
 
 	if ( not exists $self->{statements}->{$statement_name} 
 		or not defined $self->{statements}->{$statement_name}) {
 		$self->_trace_msg("Statement '$statement_name' does not exists!") 
 			if $self->{trace};
+                $Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
 		return (-3);
 	}
 	$Dstr_command = $self->{statements}->{$statement_name}->[5];
 	$statement = $self->{statements}->{$statement_name}->[0];
 	if ($#_ < 0 ) {
-		return -2 if ! $self->{statements}->{$statement_name}->[2] 
-					and $self->{statements}->{$statement_name}->[1]; 
+                if (! $self->{statements}->{$statement_name}->[2] 
+					and $self->{statements}->{$statement_name}->[1]) {
+                        $Derror_message = "MODULE ERROR: Number of the bind value not matched";
+		        return -2;
+                }
 		@bind_values = @{$self->{statements}->{$statement_name}->[4]};
 	}
 	else {
@@ -614,8 +676,11 @@ sub perform_statement {
 			push @bind_values, shift;
 		}
 	}
-	return -2
-		if $self->{statements}->{$statement_name}->[1] != scalar @bind_values;
+		
+        if ($self->{statements}->{$statement_name}->[1] != scalar @bind_values) {
+                $Derror_message = "MODULE ERROR: Number of the bind value not matched";
+	        return -2;
+        }
 	$self->{statements}->{$statement_name}->[4] = \@bind_values;
 
 	$self->_stat_start('PERFORM', $Dstr_command, \@bind_values, $statement_name);
@@ -706,10 +771,18 @@ sub close_statement {
 	my $statement_name = shift;
 	$statement_name = $self->{app} . $statement_name;
 
-	return -2 if ! defined $statement_name;
-	return -4 if ! $self->{conn};
+        if (! defined $statement_name) {
+                $Derror_message = "MODULE ERROR: statement name not defined";
+	        return -2;
+        }
+
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -4;
+        }
 
 	if ( not exists $self->{statements}->{$statement_name} ) {
+                $Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
 		return -3;
 	}
 
@@ -729,6 +802,7 @@ sub exists_statement {
 	
 	return 0 if ! defined $statement_name;
 	if ( not exists $self->{statements}->{$statement_name} ) {
+                $Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
 		return 0;
 	}
 	return 1;
@@ -740,8 +814,16 @@ sub insert {
 	my $self = shift;
 	my $insert_command = shift;
 
-	return -2 if ! defined $insert_command;
-	return -3 if ! $self->{conn};
+        if (! defined $insert_command) {
+                $Derror_message = "MODULE ERROR: INSERT command not defined";
+	        return -2;
+        }
+
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -3;
+        }
+
 
 	$self->_stat_start('INSERT', $insert_command, undef);
 
@@ -772,8 +854,15 @@ sub delete {
 	my $self = shift;
 	my $delete_command = shift;
 
-	return -2 if ! defined $delete_command;
-	return -3 if ! $self->{conn};
+        if (! defined $delete_command) {
+                $Derror_message = "MODULE ERROR: DELETE command not defined";
+	        return -2;
+        }
+
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -3;
+        }
 
 	$self->_stat_start('DELETE', $delete_command, undef);
 
@@ -805,8 +894,15 @@ sub update {
 	my $self = shift;
 	my $update_command = shift;
 
-	return -2 if ! defined $update_command;
-	return -3 if ! $self->{conn};
+        if (! defined $update_command) {
+                $Derror_message = "MODULE ERROR: UPDATE command not defined";
+	        return -2;
+        }
+
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -3;
+        }
 
 	$self->_stat_start('UPDATE', $update_command, undef);
 
@@ -839,8 +935,15 @@ sub command {
 	my $self = shift;
 	my $sql_command = shift;
 
-	return -2 if ! defined $sql_command;
-	return -3 if ! $self->{conn};
+        if (! defined $sql_command) {
+                $Derror_message = "MODULE ERROR: SQL command not defined";
+	        return -2;
+        }
+
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -3;
+        }
 
 	$self->_stat_start('COMMAND', $sql_command, undef);
 
@@ -902,8 +1005,15 @@ sub nextval {
 	my $seq_name = shift;
 	my @sqlresult;
 
-	return -2 if ! defined $seq_name;
-	return -3 if ! $self->{conn};
+        if (! defined $seq_name) {
+                $Derror_message = "MODULE ERROR: Sequence name not defined";
+	        return -2;
+        }
+
+        if (! $self->{conn}) {
+                $Derror_message = "MODULE ERROR: DB connect not exists";
+	        return -3;
+        }
 
 	if ($self->{driver} eq 'Pg') {
 		@sqlresult = $self->select("select nextval('$seq_name')");
@@ -963,6 +1073,7 @@ sub nextval {
 		return $ret_val;
 	}
 
+        $Derror_message = "MODULE ERROR: DBD driver not supported";
 	return -2;
 
 } # nextval
@@ -1004,7 +1115,7 @@ sub date2db {
 					return "TO_DATE(?, 'dd.mm.yyyy hh24:mi:ss')";
 				}
 			}
-			elsif (grep {$self->{driver} eq $_} ('Pg','Informix','Sybase','mssql','DB2','mysql')) {
+			elsif (grep {$self->{driver} eq $_} ('Pg','Informix','Sybase','mssql','DB2','mysql','Solid')) {
 				return '?';
 			}
 			else {
@@ -1205,6 +1316,7 @@ sub date2db {
 		}
 	}
 	else { # other drivers not supported
+                $Derror_message = "MODULE ERROR: DBD driver not supported";
 		return undef;
 	}
 
@@ -1255,6 +1367,7 @@ sub db2date {
 		#($hour, $min, $sec) = split /:/, $t if $t;
 	}
 	else { # other drivers not supported
+                $Derror_message = "MODULE ERROR: DBD driver not supported";
 		return wantarray ? () : undef;
 	}
 
@@ -1549,6 +1662,66 @@ sub get_stat {
 	return ($total_time, $total_comm, $total_err, $ref_high, $ref_all);
 }
 
+###########################################################################
+sub test_err {
+
+        my $self = shift;
+        my $teste = shift;
+        my $rete = -1;
+
+        if (defined $teste) {
+                $teste = uc($teste);
+                if ($teste eq 'TABLE_NOEXIST' or $teste eq '1') { $teste = 1;}
+                elsif ($teste eq 'TABLE_EXIST' or $teste eq '2') { $teste = 2;}
+                elsif ($teste eq 'REC_EXIST' or $teste eq '3') { $teste = 3;}
+                else { return 0; }
+        }
+
+        if ($self->{driver} eq 'Pg') {
+                if ($Dsqlstatus eq '7' && $Derror_message =~ /does not exist/) { $rete = 1; }
+                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Relation .* already exists/) { $rete = 2; }
+                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Cannot insert a duplicate key/) { $rete = 3; }
+        }
+        elsif ($self->{driver} eq 'Oracle') {
+                if ($Dsqlstatus eq '942') { $rete = 1; }
+                elsif ($Dsqlstatus eq '955') { $rete = 2; }
+                elsif ($Dsqlstatus eq '1') { $rete = 3; }
+        }
+        elsif ($self->{driver} eq 'Informix') {
+                if ($Dsqlstatus eq '-206') { $rete = 1; }
+                elsif ($Dsqlstatus eq '-310') { $rete = 2; }
+                elsif ($Dsqlstatus eq '-239') { $rete = 3; }
+        }
+        elsif ($self->{driver} eq 'DB2') {
+                if ($Dsqlstatus eq '-204' || ($Dsqlstatus eq '-99999' && $Derror_message =~ /CLI0125E/)) { $rete = 1; }
+                elsif ($Dsqlstatus eq '-601') { $rete = 2; }
+                elsif ($Dsqlstatus eq '-803') { $rete = 3; }
+        }
+        elsif ($self->{driver} eq 'mysql') {
+                if ($Dsqlstatus eq '1051' || $Dsqlstatus eq '1146') { $rete = 1; }
+                elsif ($Dsqlstatus eq '1050') { $rete = 2; }
+                elsif ($Dsqlstatus eq '1062') { $rete = 3; }
+        }
+        elsif ($self->{driver} eq 'mssql') {
+                if ($Dsqlstatus eq '3701' || $Dsqlstatus eq '208') { $rete = 1; }
+                elsif ($Dsqlstatus eq '2714') { $rete = 2; }
+                elsif ($Dsqlstatus eq '2601') { $rete = 3; }
+        }
+        elsif ($self->{driver} eq 'Solid') {
+                if ($Dsqlstatus eq '13011') { $rete = 1; }
+                elsif ($Dsqlstatus eq '13013') { $rete = 2; }
+                elsif ($Dsqlstatus eq '10005') { $rete = 3; }
+        }
+        else {
+                return -1 if !defined $teste;
+                return 0;
+        }
+
+        return $rete if ! defined $teste;
+        return ($rete == $teste ? $rete : 0);
+        
+} # test_err
+
 #######################################################################
 # Initialization code of module
 #######################################################################
@@ -1611,6 +1784,7 @@ DeltaX::Database - Perl module which hiddens DB differences on DBI level
   set_stat            - set statistics type
   reset_stat          - reset statistics
   get_stat            - get statistics
+  test_err            - test sqlerror
 
 =head2 Public variables
 
@@ -2222,6 +2396,24 @@ Resets local statistics (global leaves untouched).
 
  Returns:
   -nothing-
+
+=head2 test_err
+
+Test last sqlerror.
+
+ Syntax:
+  test_err(supp_error)
+
+ Args:
+  supp_error (optional) - supposed error.
+              May be: 1 or TABLE_NOEXIST - no existing table (objects)
+                      2 or TABLE_EXIST   - table (object) already exists
+                      3 or REC_EXIST     - duplicate value in unique key
+
+ Returns:
+  Without args returns error number 1,2,3 or -1 (unknown).
+  With args return the (args) error number (if equal) or 0.
+
 
 =head1 AUTHOR
 

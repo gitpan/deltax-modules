@@ -25,20 +25,21 @@ sub skip {
 	my ($msg, $x) = @_;
 
 	for (1..$x) {
-		print "skipped $num $msg\n";
+		print "ok $num # skip: $msg\n";
 		$num++;
 	}
+	local $^W = 0;
 	last SKIP;
 }
 
-print "1..36\n";
+print "1..42\n";
 
 use DeltaX::Database;
 
 ok(1);
 
 SKIP: {
-	skip ("Database tests not configured", 35)
+	skip ("Database tests not configured", 41)
 		if ! -f 't/.dbconf';
 
 	open INF, 't/.dbconf' or die "cannot read configuration ?!";
@@ -54,11 +55,13 @@ SKIP: {
 		user => $dbuser, auth => $dbpassw
 	);
 	ok (ref $db);
+	skip ("Connection to database failed: ".$DeltaX::Database::Derror_message, 40)
+		if !ref $db;
 	ok ($db->isa('DeltaX::Database'));
 
 	# create test table
 	my $result = $db->command("CREATE TABLE deltax_db_test".
-		"(num1 integer, str1 varchar(20), dat1 date)");
+		"(num1 integer, str1 varchar(20), dat1 integer)");
 	is ($result, 1, 'table created');
 
 	# insert some data
@@ -117,8 +120,7 @@ SKIP: {
 	$result = $db->open_cursor('MY', 
 		"SELECT num1, str1 FROM deltax_db_test".
 		" ORDER BY num1", 'EXTERNAL');
-	$result += 0;
-	ok($result);
+	ok($result || $result eq '0E0');
 	($result, $num1, $str1) = $db->fetch_cursor('MY');
 	ok($result);
 	is($num1, 2);
@@ -155,4 +157,26 @@ SKIP: {
 	# drop table
 	$result = $db->command("DROP TABLE deltax_db_test");
 	is ($result, 1, 'table dropped');
+
+        # test err
+        $db->command('drop table test_pok1');
+        $db->command('drop table test_pok1');
+        $result = $db->test_err('TABLE_NOEXIST');
+        is($result, 1, "($DeltaX::Database::Dsqlstatus) $DeltaX::Database::Derror_message");
+        $db->command('create table test_pok1 (pok integer not null, ptext char(20))');
+        $db->command('create table test_pok1 (pok integer not null, ptext char(20))');
+        $result = $db->test_err('TABLE_EXIST');
+        is($result, 2, "($DeltaX::Database::Dsqlstatus) $DeltaX::Database::Derror_message");
+        $result = $db->command('create unique index ixtest_pok1 on test_pok1 (pok)');
+        ok($result);
+        $db->insert('insert into test_pok1 values (1, null)');
+        $db->insert('insert into test_pok1 values (1, null)');
+        $result = $db->test_err('REC_EXIST');
+        is($result, 3, "($DeltaX::Database::Dsqlstatus) $DeltaX::Database::Derror_message");
+        $db->select('select * from test_pok2');
+        $result = $db->test_err('TABLE_NOEXIST');
+        is($result, 1, "($DeltaX::Database::Dsqlstatus) $DeltaX::Database::Derror_message");
+        $result = $db->command('drop table test_pok1');
+        ok($result);
+
 }

@@ -21,7 +21,7 @@ else {
 	open OUF, ">t/.dbconf" or die "cannot write to t/.dbconf ?!";
 
 	#---------------------------------------------------------------------
-	my $answer = prompt("Database driver [Oracle|Pg|MySQL]", "Pg");
+	my $answer = prompt("Database driver [Oracle|Pg|MySQL|Informix|DB2|Solid|MSSQL]", "Pg");
 	if (lc($answer) eq 'oracle') {
 		print OUF "Oracle\n";
 	}
@@ -30,6 +30,18 @@ else {
 	}
 	elsif (lc($answer) eq 'mysql') {
 		print OUF "mysql\n";
+	}
+	elsif (lc($answer) eq 'informix') {
+		print OUF "Informix\n";
+	}
+	elsif (lc($answer) eq 'db2') {
+		print OUF "DB2\n";
+	}
+	elsif (lc($answer) eq 'solid') {
+		print OUF "Solid\n";
+	}
+	elsif (lc($answer) eq 'mssql') {
+		print OUF "mssql\n";
 	}
 	else {
 		die "Sorry, unknown driver";
