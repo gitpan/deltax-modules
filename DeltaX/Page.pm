@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Page;
 #-----------------------------------------------------------------
-# $Id: Page.pm,v 1.2 2003/07/03 10:45:52 spicak Exp $
+# $Id: Page.pm,v 1.3 2003/09/03 08:15:28 spicak Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -171,11 +171,11 @@ sub _special {
 	$token =~ s/^\s*//g;
 	
 	if ($token =~ /^include/) {
-		$token =~ /^include\s+(\S+)\s*$/;
+		$token =~ /^include\s+([\S ]+)\s*$/;
 		return $self->_include($1, 'include');
 	}
 	if ($token =~ /^package/) {
-		$token =~ /^package\s+(\S+)\s*$/;
+		$token =~ /^package\s+([\S ]+)\s*$/;
 		return $self->_include($1, 'package');
 	}
 

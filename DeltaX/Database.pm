@@ -6,7 +6,7 @@
 # Author		: Martin Kula, 1999 <martin.kula@deltaes.com>
 #							to object model rewritten by
 #							Jakub Spicak <jakub.spicak@deltaes.cz>
-# $Id: Database.pm,v 1.15 2003/07/03 10:45:52 spicak Exp $
+# $Id: Database.pm,v 1.16 2003/10/13 06:28:34 spicak Exp $
 #
 
 package DeltaX::Database;
@@ -78,17 +78,17 @@ sub new {
 
 	my $orig_driver = $self->{driver};
 	$self->{driver} = get_driver($self->{driver});
-        if (! $self->{driver}) {
-                $Derror_message = "MODULE ERROR: Can't get a DBD driver";
-	        return -3;
-        }
+	if (! $self->{driver}) {
+		$Derror_message = "MODULE ERROR: Can't get a DBD driver";
+		return -3;
+	}
 
 	my %attr = ('AutoCommit' => $self->{autocommit}, 'PrintError' => 0);
 	$self->{driver} = $self->get_source($self->{driver}, $self->{dbname});
-        if (! $self->{driver}) {
-                $Derror_message = "MODULE ERROR: Can't get a DB source";
-	        return -4;
-        }
+	if (! $self->{driver}) {
+		$Derror_message = "MODULE ERROR: Can't get a DB source";
+		return -4;
+	}
 
 	my ($user, $auth);
 	SWITCH: for ($self->{driver}) {
@@ -130,7 +130,7 @@ sub new {
 			$auth = $self->{auth};
 			last SWITCH;};
 		# Default (not supported)
-                $Derror_message = "MODULE ERROR: DBD driver not supported";
+		$Derror_message = "MODULE ERROR: DBD driver not supported";
 		return -5;
 	}
 	$self->{conn} = DBI->connect($self->{driver}, $user, $auth, \%attr);
@@ -192,14 +192,14 @@ sub transaction_end {
 	}
 	my $result;
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -2;
-        }
-        if ($self->{autocommit}) {
-                $Derror_message = "MODULE ERROR: Autocommit ON";
-	        return -1;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -2;
+	}
+	if ($self->{autocommit}) {
+		$Derror_message = "MODULE ERROR: Autocommit ON";
+		return -1;
+	}
 
 	if ($type_f or ! $self->{transaction}) {
 		if ($self->{driver} ne 'Oracle') {
@@ -232,14 +232,14 @@ sub select {
 	my $sql_command = shift;
 	my @ret_array;
 
-        if (! defined $sql_command) {
-                $Derror_message = "MODULE ERROR: SQL command not defined";
-	        return (-2);
-        }
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return (-3);
-        }
+	if (! defined $sql_command) {
+		$Derror_message = "MODULE ERROR: SQL command not defined";
+		return (-2);
+	}
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return (-3);
+	}
 
 	$self->_stat_start('SELECT', $sql_command, undef);
 
@@ -300,16 +300,16 @@ sub open_cursor {
 	my $self = shift;
 	my $cursor_name = shift;
 
-        if (!$self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -3;
-        }
+	if (!$self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -3;
+	}
 
 	my $sql_command = shift;
-        if (! defined $sql_command) {
-                $Derror_message = "MODULE ERROR: SQL command not defined";
-	        return -2;
-        }
+	if (! defined $sql_command) {
+		$Derror_message = "MODULE ERROR: SQL command not defined";
+		return -2;
+	}
 
 	my $cursortype = $self->{cursor_type};
 	my $result;
@@ -456,18 +456,18 @@ sub fetch_cursor {
 	my @tmp_array;
 	my $cursor_name = shift;
 
-        if (! defined $cursor_name) {
-                $Derror_message = "MODULE ERROR: cursor not defined";
-	        return (-2);
-        }
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return (-4);
-        }
+	if (! defined $cursor_name) {
+		$Derror_message = "MODULE ERROR: cursor not defined";
+		return (-2);
+	}
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return (-4);
+	}
 
 	if ( not exists $self->{cursors}->{$cursor_name} 
 		or not defined $self->{cursors}->{$cursor_name}) {
-                $Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
+		$Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
 		return (-3);
 	}
 	$Dstr_command = $self->{cursors}->{$cursor_name}->[4];
@@ -523,17 +523,17 @@ sub close_cursor {
 	my $self = shift;
 	my $cursor_name = shift;
 
-        if (! defined $cursor_name) {
-                $Derror_message = "MODULE ERROR: cursor not defined";
-	        return -2;
-        }
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -4;
-        }
+	if (! defined $cursor_name) {
+		$Derror_message = "MODULE ERROR: cursor not defined";
+		return -2;
+	}
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -4;
+	}
 
 	if ( not exists $self->{cursors}->{$cursor_name} ) {
-                $Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
+		$Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
 		return -3;
 	}
 	#$Dstr_command = $self->{cursors}->{$cursor_name}->[4];
@@ -552,7 +552,7 @@ sub exists_cursor {
 	return 0 if ! $cursor_name;
 	if ( not exists $self->{cursors}->{$cursor_name} 
 		or not defined $self->{cursors}->{$cursor_name}) {
-                $Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
+		$Derror_message = "MODULE ERROR: cursor ($cursor_name) not exists";
 		return 0;
 	}
 	return 1;
@@ -567,32 +567,34 @@ sub open_statement {
 	my $statement_name = shift;
 	$statement_name = $self->{app} . $statement_name;
 
-        if (! defined $statement_name) {
-                $Derror_message = "MODULE ERROR: statement not defined";
-	        return -2;
-        }
+	if (! defined $statement_name) {
+		$Derror_message = "MODULE ERROR: statement not defined";
+		return -2;
+	}
 
 	my $sql_command = shift;
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -4;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -4;
+	}
 
-        if (! defined $sql_command) {
-                $Derror_message = "MODULE ERROR: SQL command not defined";
-	        return -2;
-        }
+	if (! defined $sql_command) {
+		$Derror_message = "MODULE ERROR: SQL command not defined";
+		return -2;
+	}
 
 	my $is_select = 1 if uc($sql_command) =~ /^[	\n]*SELECT[  \n]/;
-	my @sqlc_tmp = $sql_command =~ /[\?\!]/g;
+
+	my $bind_re = '\?\w?|!';
+	my @sqlc_tmp = $sql_command =~ /$bind_re/g;
 	my $number_bval = scalar @sqlc_tmp;
-	$sql_command =~ s/\!/\?/g;
+	$sql_command =~ s/$bind_re/?/g;
 	if ($#_ >= 0) {
-                if ($number_bval != shift) {
-                        $Derror_message = "MODULE ERROR: Number of the bind value not matched";
-		        return -3;
-                } 
+		if ($number_bval != shift) {
+			$Derror_message = "MODULE ERROR: Number of the bind value not matched";
+			return -3;
+		}
 	}
 
 	if ( exists $self->{statements}->{$statement_name} ) {
@@ -618,9 +620,15 @@ sub open_statement {
 
 	if ($self->{driver} eq 'Oracle') {
 		for (my $i = 0; $i < scalar @sqlc_tmp; $i++) {
-			if ($sqlc_tmp[$i] eq '!') {
+			# BLOB
+			if ($sqlc_tmp[$i] eq '!' or uc($sqlc_tmp[$i]) eq '?B') {
 				return if ! $statement->bind_param($i + 1, undef,
 				 {ora_type => 113});
+			}
+			# CLOB
+			if (uc($sqlc_tmp[$i]) eq '?C') {
+				return if ! $statement->bind_param($i + 1, undef,
+				 {ora_type => 112});
 			}
 		}
 	}
@@ -644,31 +652,31 @@ sub perform_statement {
 	my $statement_name = shift;
 	$statement_name = $self->{app} . $statement_name;
 
-        if (! defined $statement_name) {
-                $Derror_message = "MODULE ERROR: statement name not defined";
-	        return (-2);
-        }
+	if (! defined $statement_name) {
+		$Derror_message = "MODULE ERROR: statement name not defined";
+		return (-2);
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return (-4);
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return (-4);
+	}
 
 	if ( not exists $self->{statements}->{$statement_name} 
 		or not defined $self->{statements}->{$statement_name}) {
 		$self->_trace_msg("Statement '$statement_name' does not exists!") 
 			if $self->{trace};
-                $Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
+		$Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
 		return (-3);
 	}
 	$Dstr_command = $self->{statements}->{$statement_name}->[5];
 	$statement = $self->{statements}->{$statement_name}->[0];
 	if ($#_ < 0 ) {
-                if (! $self->{statements}->{$statement_name}->[2] 
+		if (! $self->{statements}->{$statement_name}->[2] 
 					and $self->{statements}->{$statement_name}->[1]) {
-                        $Derror_message = "MODULE ERROR: Number of the bind value not matched";
-		        return -2;
-                }
+			$Derror_message = "MODULE ERROR: Number of the bind value not matched";
+			return -2;
+		}
 		@bind_values = @{$self->{statements}->{$statement_name}->[4]};
 	}
 	else {
@@ -677,10 +685,10 @@ sub perform_statement {
 		}
 	}
 		
-        if ($self->{statements}->{$statement_name}->[1] != scalar @bind_values) {
-                $Derror_message = "MODULE ERROR: Number of the bind value not matched";
-	        return -2;
-        }
+	if ($self->{statements}->{$statement_name}->[1] != scalar @bind_values) {
+		$Derror_message = "MODULE ERROR: Number of the bind value not matched";
+		return -2;
+	}
 	$self->{statements}->{$statement_name}->[4] = \@bind_values;
 
 	$self->_stat_start('PERFORM', $Dstr_command, \@bind_values, $statement_name);
@@ -771,18 +779,18 @@ sub close_statement {
 	my $statement_name = shift;
 	$statement_name = $self->{app} . $statement_name;
 
-        if (! defined $statement_name) {
-                $Derror_message = "MODULE ERROR: statement name not defined";
-	        return -2;
-        }
+	if (! defined $statement_name) {
+		$Derror_message = "MODULE ERROR: statement name not defined";
+		return -2;
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -4;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -4;
+	}
 
 	if ( not exists $self->{statements}->{$statement_name} ) {
-                $Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
+		$Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
 		return -3;
 	}
 
@@ -802,7 +810,7 @@ sub exists_statement {
 	
 	return 0 if ! defined $statement_name;
 	if ( not exists $self->{statements}->{$statement_name} ) {
-                $Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
+		$Derror_message = "MODULE ERROR: Statement ($statement_name) not exists";
 		return 0;
 	}
 	return 1;
@@ -814,15 +822,15 @@ sub insert {
 	my $self = shift;
 	my $insert_command = shift;
 
-        if (! defined $insert_command) {
-                $Derror_message = "MODULE ERROR: INSERT command not defined";
-	        return -2;
-        }
+	if (! defined $insert_command) {
+		$Derror_message = "MODULE ERROR: INSERT command not defined";
+		return -2;
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -3;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -3;
+	}
 
 
 	$self->_stat_start('INSERT', $insert_command, undef);
@@ -854,15 +862,15 @@ sub delete {
 	my $self = shift;
 	my $delete_command = shift;
 
-        if (! defined $delete_command) {
-                $Derror_message = "MODULE ERROR: DELETE command not defined";
-	        return -2;
-        }
+	if (! defined $delete_command) {
+		$Derror_message = "MODULE ERROR: DELETE command not defined";
+		return -2;
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -3;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -3;
+	}
 
 	$self->_stat_start('DELETE', $delete_command, undef);
 
@@ -894,15 +902,15 @@ sub update {
 	my $self = shift;
 	my $update_command = shift;
 
-        if (! defined $update_command) {
-                $Derror_message = "MODULE ERROR: UPDATE command not defined";
-	        return -2;
-        }
+	if (! defined $update_command) {
+		$Derror_message = "MODULE ERROR: UPDATE command not defined";
+		return -2;
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -3;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -3;
+	}
 
 	$self->_stat_start('UPDATE', $update_command, undef);
 
@@ -935,15 +943,15 @@ sub command {
 	my $self = shift;
 	my $sql_command = shift;
 
-        if (! defined $sql_command) {
-                $Derror_message = "MODULE ERROR: SQL command not defined";
-	        return -2;
-        }
+	if (! defined $sql_command) {
+		$Derror_message = "MODULE ERROR: SQL command not defined";
+		return -2;
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -3;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -3;
+	}
 
 	$self->_stat_start('COMMAND', $sql_command, undef);
 
@@ -1005,15 +1013,15 @@ sub nextval {
 	my $seq_name = shift;
 	my @sqlresult;
 
-        if (! defined $seq_name) {
-                $Derror_message = "MODULE ERROR: Sequence name not defined";
-	        return -2;
-        }
+	if (! defined $seq_name) {
+		$Derror_message = "MODULE ERROR: Sequence name not defined";
+		return -2;
+	}
 
-        if (! $self->{conn}) {
-                $Derror_message = "MODULE ERROR: DB connect not exists";
-	        return -3;
-        }
+	if (! $self->{conn}) {
+		$Derror_message = "MODULE ERROR: DB connect not exists";
+		return -3;
+	}
 
 	if ($self->{driver} eq 'Pg') {
 		@sqlresult = $self->select("select nextval('$seq_name')");
@@ -1073,7 +1081,7 @@ sub nextval {
 		return $ret_val;
 	}
 
-        $Derror_message = "MODULE ERROR: DBD driver not supported";
+	$Derror_message = "MODULE ERROR: DBD driver not supported";
 	return -2;
 
 } # nextval
@@ -1321,7 +1329,7 @@ sub date2db {
 		}
 	}
 	else { # other drivers not supported
-    $Derror_message = "MODULE ERROR: DBD driver not supported";
+		$Derror_message = "MODULE ERROR: DBD driver not supported";
 		return undef;
 	}
 
@@ -1372,7 +1380,7 @@ sub db2date {
 		#($hour, $min, $sec) = split /:/, $t if $t;
 	}
 	else { # other drivers not supported
-                $Derror_message = "MODULE ERROR: DBD driver not supported";
+		$Derror_message = "MODULE ERROR: DBD driver not supported";
 		return wantarray ? () : undef;
 	}
 
@@ -1670,72 +1678,72 @@ sub get_stat {
 ###########################################################################
 sub test_err {
 
-        my $self = shift;
-        my $teste = shift;
-        my @teste = ();
-        my $rete = -1;
+	my $self = shift;
+	my $teste = shift;
+	my @teste = ();
+	my $rete = -1;
 
-        while (defined $teste) {
-                $teste = uc($teste);
-                if ($teste eq 'TABLE_NOTEXIST' or $teste eq '1') { push @teste, 1;}
-                elsif ($teste eq 'TABLE_EXIST' or $teste eq '2') { push @teste, 2;}
-                elsif ($teste eq 'REC_EXIST' or $teste eq '3') { push @teste, 3;}
-                elsif ($teste eq 'SCHEMA_NOTEXIST' or $teste eq '4') { push @teste, 4;}
-                elsif ($teste eq 'SCHEMA_EXIST' or $teste eq '5') { push @teste, 5;}
-                else { return 0; }
-                $teste = shift;
-        }
-        no warnings "uninitialized";
-        if ($self->{driver} eq 'Pg') {
-                if ($Dsqlstatus eq '7' && $Derror_message =~ /(Relation|table) .* does not exist/) { $rete = 1; }
-                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Relation .* already exists/) { $rete = 2; }
-                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Cannot insert a duplicate key/) { $rete = 3; }
-                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(Namespace|Schema) .* does not exist/) { $rete = 4; }
-                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /namespace .* already exists/) { $rete = 5; }
-        }
-        elsif ($self->{driver} eq 'Oracle') {
-                if ($Dsqlstatus eq '942' || $Dsqlstatus eq '4043') { $rete = 1; }
-                elsif ($Dsqlstatus eq '955') { $rete = 2; }
-                elsif ($Dsqlstatus eq '1') { $rete = 3; }
-        }
-        elsif ($self->{driver} eq 'Informix') {
-                if ($Dsqlstatus eq '-206') { $rete = 1; }
-                elsif ($Dsqlstatus eq '-310') { $rete = 2; }
-                elsif ($Dsqlstatus eq '-239') { $rete = 3; }
-        }
-        elsif ($self->{driver} eq 'DB2') {
-                if (($Dsqlstatus eq '-204' && $Derror_message =~ /"[^\.]+\.[^\.]+"/)
-                        || ($Dsqlstatus eq '-99999' && $Derror_message =~ /CLI0125E/)) { $rete = 1; }
-                elsif ($Dsqlstatus eq '-601' && $Derror_message =~ /type "TABLE"/) { $rete = 2; }
-                elsif ($Dsqlstatus eq '-803') { $rete = 3; }
-                elsif ($Dsqlstatus eq '-204' && $Derror_message =~ /"[^\.]+"/) { $rete = 4; }
-                elsif ($Dsqlstatus eq '-601' && $Derror_message =~ /type "SCHEMA"/) { $rete = 5; }
-        }
-        elsif ($self->{driver} eq 'mysql') {
-                if ($Dsqlstatus eq '1051' || $Dsqlstatus eq '1146') { $rete = 1; }
-                elsif ($Dsqlstatus eq '1050') { $rete = 2; }
-                elsif ($Dsqlstatus eq '1062') { $rete = 3; }
-        }
-        elsif ($self->{driver} eq 'mssql') {
-                if ($Dsqlstatus eq '3701' || $Dsqlstatus eq '208') { $rete = 1; }
-                elsif ($Dsqlstatus eq '2714') { $rete = 2; }
-                elsif ($Dsqlstatus eq '2601') { $rete = 3; }
-        }
-        elsif ($self->{driver} eq 'Solid') {
-                if ($Dsqlstatus eq '13011') { $rete = 1; }
-                elsif ($Dsqlstatus eq '13013') { $rete = 2; }
-                elsif ($Dsqlstatus eq '10005' || $Dsqlstatus eq '10033') { $rete = 3; }
-                elsif ($Dsqlstatus eq '13141' || $Dsqlstatus eq '13046') { $rete = 4; }
-                elsif ($Dsqlstatus eq '13142') { $rete = 5; }
-        }
-        else {
-                return -1 if !scalar @teste;
-                return 0;
-        }
+	while (defined $teste) {
+		$teste = uc($teste);
+		if ($teste eq 'TABLE_NOTEXIST' or $teste eq '1') { push @teste, 1;}
+		elsif ($teste eq 'TABLE_EXIST' or $teste eq '2') { push @teste, 2;}
+		elsif ($teste eq 'REC_EXIST' or $teste eq '3') { push @teste, 3;}
+		elsif ($teste eq 'SCHEMA_NOTEXIST' or $teste eq '4') { push @teste, 4;}
+		elsif ($teste eq 'SCHEMA_EXIST' or $teste eq '5') { push @teste, 5;}
+		else { return 0; }
+		$teste = shift;
+	}
+	no warnings "uninitialized";
+	if ($self->{driver} eq 'Pg') {
+		if ($Dsqlstatus eq '7' && $Derror_message =~ /(Relation|table) .* does not exist/) { $rete = 1; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Relation .* already exists/) { $rete = 2; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Cannot insert a duplicate key/) { $rete = 3; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(Namespace|Schema) .* does not exist/) { $rete = 4; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /namespace .* already exists/) { $rete = 5; }
+	}
+	elsif ($self->{driver} eq 'Oracle') {
+		if ($Dsqlstatus eq '942' || $Dsqlstatus eq '4043') { $rete = 1; }
+		elsif ($Dsqlstatus eq '955') { $rete = 2; }
+		elsif ($Dsqlstatus eq '1') { $rete = 3; }
+	}
+	elsif ($self->{driver} eq 'Informix') {
+		if ($Dsqlstatus eq '-206') { $rete = 1; }
+		elsif ($Dsqlstatus eq '-310') { $rete = 2; }
+		elsif ($Dsqlstatus eq '-239') { $rete = 3; }
+	}
+	elsif ($self->{driver} eq 'DB2') {
+		if (($Dsqlstatus eq '-204' && $Derror_message =~ /"[^\.]+\.[^\.]+"/)
+			|| ($Dsqlstatus eq '-99999' && $Derror_message =~ /CLI0125E/)) { $rete = 1; }
+		elsif ($Dsqlstatus eq '-601' && $Derror_message =~ /type "TABLE"/) { $rete = 2; }
+		elsif ($Dsqlstatus eq '-803') { $rete = 3; }
+		elsif ($Dsqlstatus eq '-204' && $Derror_message =~ /"[^\.]+"/) { $rete = 4; }
+		elsif ($Dsqlstatus eq '-601' && $Derror_message =~ /type "SCHEMA"/) { $rete = 5; }
+	}
+	elsif ($self->{driver} eq 'mysql') {
+		if ($Dsqlstatus eq '1051' || $Dsqlstatus eq '1146') { $rete = 1; }
+		elsif ($Dsqlstatus eq '1050') { $rete = 2; }
+		elsif ($Dsqlstatus eq '1062') { $rete = 3; }
+	}
+	elsif ($self->{driver} eq 'mssql') {
+		if ($Dsqlstatus eq '3701' || $Dsqlstatus eq '208') { $rete = 1; }
+		elsif ($Dsqlstatus eq '2714') { $rete = 2; }
+		elsif ($Dsqlstatus eq '2601') { $rete = 3; }
+	}
+	elsif ($self->{driver} eq 'Solid') {
+		if ($Dsqlstatus eq '13011') { $rete = 1; }
+		elsif ($Dsqlstatus eq '13013') { $rete = 2; }
+		elsif ($Dsqlstatus eq '10005' || $Dsqlstatus eq '10033') { $rete = 3; }
+		elsif ($Dsqlstatus eq '13141' || $Dsqlstatus eq '13046') { $rete = 4; }
+		elsif ($Dsqlstatus eq '13142') { $rete = 5; }
+	}
+	else {
+		return -1 if !scalar @teste;
+		return 0;
+	}
 
-        return $rete if ! scalar @teste;
-        return (grep({$rete == $_} @teste) ? $rete : 0);
-        
+	return $rete if ! scalar @teste;
+	return (grep({$rete == $_} @teste) ? $rete : 0);
+	
 } # test_err
 
 #######################################################################
@@ -1748,76 +1756,76 @@ sub test_err {
 
 DeltaX::Database - Perl module which hiddens DB differences on DBI level
 
-     _____
-    /     \ _____    ______ ______ ___________
-   /  \ /  \\__  \  /  ___//  ___// __ \_  __ \
-  /    Y    \/ __ \_\___ \ \___ \\  ___/|  | \/
-  \____|__  (____  /____  >____  >\___  >__|
-          \/     \/     \/     \/     \/        project
+		 _____
+		/		\ _____		 ______ ______ ___________
+	 /	\ /  \\__  \	/  ___//	___// __ \_  __ \
+	/		 Y		\/ __ \_\___ \ \___ \\	___/|  | \/
+	\____|__	(____  /____	>____  >\___	>__|
+		\/	 \/	\/		 \/			\/	project
 
 
  Supported drivers:
-  Oracle        [Oracle]
-  PostgreSQL    [Pg]
-  MySQL         [mysql]
-  Sybase        [Sybase]    [not tested]
-  MS SQL        [mssql]     [using Sybase driver]
-  DB2           [DB2]
-  Solid   [Solid]
+	Oracle	[Oracle]
+	PostgreSQL	[Pg]
+	MySQL		[mysql]
+	Sybase	[Sybase]		[not tested]
+	MS SQL	[mssql]			[using Sybase driver]
+	DB2		[DB2]
+	Solid		[Solid]
 
 =head1 SYNOPSIS
 
 =head2 Public functions
 
-  new                 - New DB connect
-  close               - Close DB connect
-  check               - DB connect check
-  transaction_begin   - Begin transaction
-  transaction_end     - End transaction
-  select              - Performing SQL select
-  open_cursor         - Cursor openning
-  fetch_cursor        - Get row by opened cursor
-  close_cursor        - Close cursor
-  exists_cursor       - Checks existence of cursor
-  insert              - Performing SQL insert
-  delete              - Performing SQL delete
-  update              - Performing SQL update
-  command             - Performing any SQL command
-  open_statement      - Prepare statement (for bind values)
-  perform_statement   - Perform prepared statement
-  close_statement     - Close prepared statement
-  exists_statement    - Checks existence of statement
-  quote               - Quotting string
-  date2db             - Converting datetime to db format
-  db2date             - Converting db format of date to datetime
-  nextval             - Select next value from sequence
-  func                - Performs DBD specific function
-  const               - Sets DBD specific constant
-  ping                - Checks DB connect
-  trace               - set trace level
-  trace_on            - DBI trace ON
-  trace_off           - DBI trace OFF
-  set_stat            - set statistics type
-  reset_stat          - reset statistics
-  get_stat            - get statistics
-  test_err            - test sqlerror
+	new					- New DB connect
+	close					- Close DB connect
+	check					- DB connect check
+	transaction_begin		- Begin transaction
+	transaction_end			- End transaction
+	select				- Performing SQL select
+	open_cursor				- Cursor openning
+	fetch_cursor				- Get row by opened cursor
+	close_cursor				- Close cursor
+	exists_cursor				- Checks existence of cursor
+	insert				- Performing SQL insert
+	delete				- Performing SQL delete
+	update				- Performing SQL update
+	command				- Performing any SQL command
+	open_statement			- Prepare statement (for bind values)
+	perform_statement		- Perform prepared statement
+	close_statement			- Close prepared statement
+	exists_statement		- Checks existence of statement
+	quote					- Quotting string
+	date2db				- Converting datetime to db format
+	db2date				- Converting db format of date to datetime
+	nextval				- Select next value from sequence
+	func					- Performs DBD specific function
+	const					- Sets DBD specific constant
+	ping					- Checks DB connect
+	trace					- set trace level
+	trace_on				- DBI trace ON
+	trace_off				- DBI trace OFF
+	set_stat				- set statistics type
+	reset_stat				- reset statistics
+	get_stat				- get statistics
+	test_err				- test sqlerror
 
 =head2 Public variables
 
-  $Dsqlstatus         - SQL status (error) code
-  $Dcmdstatus         - Command status (error) code
-  $Derror_message     - Actual error message
-  $VERSION            - Module wersion
-  $Dstr_command       - last used SQL command
+	$Dsqlstatus				- SQL status (error) code
+	$Dcmdstatus				- Command status (error) code
+	$Derror_message			- Actual error message
+	$VERSION				- Module wersion
+	$Dstr_command				- last used SQL command
 
 =head2 Private functions
 
-  get_driver      - Returns DBD driver
-  get_source      - Returns DBD specific connect string
-  _trace          - Error trace (using DeltaX::Trace)
-  _trace_msg      - Error trace (using DeltaX::Trace)
-  _set_app        - Sets application prefix (for statements)
-  _replace_values - replaces values for placeholders
+	get_driver		- Returns DBD driver
+	get_source		- Returns DBD specific connect string
+	_trace		- Error trace (using DeltaX::Trace)
+	_trace_msg		- Error trace (using DeltaX::Trace)
+	_set_app		- Sets application prefix (for statements)
+	_replace_values - replaces values for placeholders
 
 =head2 Private variables
 
@@ -1830,24 +1838,24 @@ Connects to DB and creates new object which handles it.
 Parameters are given in key => value form.
  
  Possible parameters:
-  driver [required]      - DB driver to use (eg. Oracle, Pg, ...)
-  dbname [required]      - database name
-  host [def: none]       - host on which database resides
-  user [required]        - user to connect to DB
-  auth                   - password to connect to DB
-  autocommit [def: 0]    - use autocommit?
-  datestyle [def: none]  - DB specific datestyle
-    (eg. PGDATESTYLE for PostgreSQL, NLS_DATE_FORMAT for Oracle,
-     DBDATE for Informix)
-  close_curs [def: 0]    - close cursors when ending transaction?
-  cursor_type [def: INTERNAL]
-                         - default cursor type <INTERNAL|EXTERNAL>
-  trace [def: 0]         - tracing: 0 - none, 1 - errors, 2 - with SQL string
-  app [def: none]        - application prefix for 
+	driver [required]	 - DB driver to use (eg. Oracle, Pg, ...)
+	dbname [required]	 - database name
+	host [def: none]	 - host on which database resides
+	user [required]	 - user to connect to DB
+	auth			 - password to connect to DB
+	autocommit [def: 0]	 - use autocommit?
+	datestyle [def: none]  - DB specific datestyle
+		(eg. PGDATESTYLE for PostgreSQL, NLS_DATE_FORMAT for Oracle,
+		 DBDATE for Informix)
+	close_curs [def: 0]	 - close cursors when ending transaction?
+	cursor_type [def: INTERNAL]
+			 - default cursor type <INTERNAL|EXTERNAL>
+	trace [def: 0]	 - tracing: 0 - none, 1 - errors, 2 - with SQL string
+	app [def: none]	 - application prefix for 
 
  Returns:
-  undef in case of error (check $Derror_message for reason)
-  otherwise returns new DeltaX::Database object
+	undef in case of error (check $Derror_message for reason)
+	otherwise returns new DeltaX::Database object
 
 =head2 close
 
@@ -1860,27 +1868,27 @@ Closes DB connect
 Checks DB connect (via ping()).
 
  Syntax:
-  check()
+	check()
 
  Args:
-  -none-
+	-none-
 
  Returns:
-  -1 - error
-   0 - ok/connected
+	-1 - error
+	 0 - ok/connected
 
 =head2 ping
 
 Interface to DBH->ping().
 
  Syntax:
-  ping()
+	ping()
 
  Args:
-  -none-
+	-none-
 
  Returns:
-  value returned by DBH->ping().
+	value returned by DBH->ping().
 
 =head2 transaction_begin
 
@@ -1888,16 +1896,16 @@ Starts new transaction by performing COMMIT ($type == 1, it's default)
 or ROLLBACK ($type == 0).
  
  Syntax:
-  transaction_begin([$type])
+	transaction_begin([$type])
  
  Args:
-  $type [def: 1] - see above
+	$type [def: 1] - see above
 
  Returns:
-   1 - ok
-   0 - SQL command failed (see $Derror_message)
-  -1 - autocommit is enabled
-  -2 - not connected
+	 1 - ok
+	 0 - SQL command failed (see $Derror_message)
+	-1 - autocommit is enabled
+	-2 - not connected
 
 Note:
 It erases all cursors if close_curs enabled (see L<"new">).
@@ -1908,16 +1916,16 @@ Ends transaction by performing COMMIT ($type == 1, it's default) or
 ROLLBACK ($type == 0).
 
  Syntax:
-  transaction_begin([$type])
+	transaction_begin([$type])
 
  Args:
-  $type [def: 0] - see above
+	$type [def: 0] - see above
 
  Returns:
-   1 - ok
-   0 - SQL command failedc (see $Derror_message)
-  -1 - autocommit is enabled
-  -2 - not connected
+	 1 - ok
+	 0 - SQL command failedc (see $Derror_message)
+	-1 - autocommit is enabled
+	-2 - not connected
 
 Note:
 It erases all cursors if close_curs enabled (see L<"new">).
@@ -1928,18 +1936,18 @@ Performs SQL command (SELECT assumed) and returns array with first returned
 row.
 
  Syntax:
-  select($select_str)
+	select($select_str)
 
  Args:
-  $select_str - SELECT command string
+	$select_str - SELECT command string
 
  Returns:
-  array, first value:
-    0 - no records found
-   >0 - record found (on index 1 starts selected row values)
-   -1 - SQL error (see $Derror_message)
-   -2 - bad parameters
-   -3 - not connected
+	array, first value:
+		0 - no records found
+	 >0 - record found (on index 1 starts selected row values)
+	 -1 - SQL error (see $Derror_message)
+	 -2 - bad parameters
+	 -3 - not connected
 
 Note:
 If transaction not started, it performs transaction_end(0)
@@ -1949,23 +1957,23 @@ If transaction not started, it performs transaction_end(0)
 Opens new cursor $cursor_name. For fetching rows use fetch_cursor().
 
  Syntax:
-  open_cursor($cursor_name, {$select_str | $prepared_name, [$cursor_type,] [@bind_values]})
+	open_cursor($cursor_name, {$select_str | $prepared_name, [$cursor_type,] [@bind_values]})
 
  Args:
-  $cursor_name [required] - cursor name (existing cursor with the same name will
-    be replaced)
-  $select_str             - SQL SELECT command
-  - or -
-  $prepared_name          - name of prepared statement
-  $cursor_type            - INTERNAL [emulated], EXTERNAL [by DBI - DB]
-  @bind_values            - values for prepared statement
+	$cursor_name [required] - cursor name (existing cursor with the same name will
+		be replaced)
+	$select_str			- SQL SELECT command
+	- or -
+	$prepared_name		- name of prepared statement
+	$cursor_type			- INTERNAL [emulated], EXTERNAL [by DBI - DB]
+	@bind_values			- values for prepared statement
 
  Returns:
-   0 - no rows found
-  >0 - ok, for INTERNAL returns number of rows, for EXTERNAL DBD specific value
-  -1 - SQL command failed (see $Derror_message)
-  -2 - bad parameters
-  -3 - not connected
+	 0 - no rows found
+	>0 - ok, for INTERNAL returns number of rows, for EXTERNAL DBD specific value
+	-1 - SQL command failed (see $Derror_message)
+	-2 - bad parameters
+	-3 - not connected
 
 Note:
 Cursor from prepared statement is always INTERNAL.
@@ -1978,51 +1986,51 @@ For MS SQL, cursor is always INTERNAL.
 Returns next row from cursor.
 
  Syntax:
-  fetch_cursor($cursor_name, [$num_row])
+	fetch_cursor($cursor_name, [$num_row])
 
  Args:
-  $cursor_name [required] - cursor name
-  $num_row [def: next]    - position of required row (from 0, for INTERNAL 
-   cursors only!)
+	$cursor_name [required] - cursor name
+	$num_row [def: next]		- position of required row (from 0, for INTERNAL 
+	 cursors only!)
 
  Returns:
-  array with result, first value indicates status:
-    0 - last row, next fetch_cursor() returns first row again
-   >0 - next row, not last
-   -1 - SQL error (see $Derror_message)
-   -2 - bad parameters
-   -3 - cursor doesn't exist
-   -4 - not connected
+	array with result, first value indicates status:
+		0 - last row, next fetch_cursor() returns first row again
+	 >0 - next row, not last
+	 -1 - SQL error (see $Derror_message)
+	 -2 - bad parameters
+	 -3 - cursor doesn't exist
+	 -4 - not connected
 
 =head2 close_cursor
 
 Closes cursor and releases data from it.
 
  Syntax:
-  close_cursor($cursor_name)
+	close_cursor($cursor_name)
 
  Args:
-  $cursor_name [required] - cursor name to close
+	$cursor_name [required] - cursor name to close
 
  Returns:
-   0 - cursor closed
-  -1 - bad paramaters
-  -2 - cursor doesn't exist
-  -3 - not connected
+	 0 - cursor closed
+	-1 - bad paramaters
+	-2 - cursor doesn't exist
+	-3 - not connected
 
 =head2 exists_cursor
 
 Check existence of cursor of given name.
 
  Syntax:
-  exists_cursor($cursor_name)
+	exists_cursor($cursor_name)
 
  Args:
-  $cursor_name [required] - cursor name
+	$cursor_name [required] - cursor name
 
  Returns:
-  0 - not exists
-  1 - exists
+	0 - not exists
+	1 - exists
 
 =head2 open_statement
 
@@ -2030,189 +2038,190 @@ Prepares SQL command, which can bind variables and can be repeatly exexuted
 (using L<"perform_statement"> or L<"open_cursor">).
 
  Syntax:
-  open_statement($stmt_name, $sql_string, $num_binds)
+	open_statement($stmt_name, $sql_string, $num_binds)
 
  Args:
-  $stmt_name [required]  - statement name, if exists will be replaced
-  $sql_string [required] - SQL command to prepare
-  $num_binds [optional]  - number of binded values (for check only)
+	$stmt_name [required]  - statement name, if exists will be replaced
+	$sql_string [required] - SQL command to prepare
+	$num_binds [optional]  - number of binded values (for check only)
 
  Returns:
-  >0 - number of binded variables [ok]
-   0 - no bind values [ok]
-  -1 - SQL command failed [not supported by all drivers]
-  -2 - bad parameters
-  -3 - bad number of binded variables
-  -4 - not connected
+	>0 - number of binded variables [ok]
+	 0 - no bind values [ok]
+	-1 - SQL command failed [not supported by all drivers]
+	-2 - bad parameters
+	-3 - bad number of binded variables
+	-4 - not connected
 
 Note:
 Use only question marks, no :a form!
 
 Note:
-[Oracle only] For BLOBs use exclamation marks instead of question marks.
+[Oracle only] For BLOBs use exclamation marks or ?B instead of question marks.
+[Oracle only] For CLOBs use ?C instead of question marks.
 
 =head2 perform_statement
 
 Performs prepared statement.
 
  Syntax:
-  perform_statement($stmt_name, [@bind_values])
+	perform_statement($stmt_name, [@bind_values])
 
  Args:
-  $stmt_name [required] - statement name (must be prepared using
-   prepare_statement())
-  @bind_values          - values which will be binded to statement,
-   there must be not less values than there is in prepared statement,
-   redundant will be ignored
+	$stmt_name [required] - statement name (must be prepared using
+	 prepare_statement())
+	@bind_values		- values which will be binded to statement,
+	 there must be not less values than there is in prepared statement,
+	 redundant will be ignored
 
  Returns:
-  array, first value indicates status:
-    0 - no row returned/affected, but success
-   >0 - ok, number of returned/affected rows
-    (for SELECT it returns just one row (see select()), for
-     INSERT/UPDATE/DELETE returns number of affected rows)
-   -1 - SQL error (see $Derror_message)
-   -2 - bad parameters
-   -3 - statement doesn't exist
-   -4 not connected
-  for SELECT other values in array represents returned row
+	array, first value indicates status:
+		0 - no row returned/affected, but success
+	 >0 - ok, number of returned/affected rows
+		(for SELECT it returns just one row (see select()), for
+		 INSERT/UPDATE/DELETE returns number of affected rows)
+	 -1 - SQL error (see $Derror_message)
+	 -2 - bad parameters
+	 -3 - statement doesn't exist
+	 -4 not connected
+	for SELECT other values in array represents returned row
 
 =head2 close_statement
 
 Closes (destroys) prepared statement.
 
  Syntax:
-  close_statement($stmt_name)
+	close_statement($stmt_name)
 
  Args:
-  $stmt_name [required] - statement name to close
+	$stmt_name [required] - statement name to close
 
  Returns:
-   0 - closed
-  -2 - bad parameters
-  -3 - statement doesn't exist
-  -4 - not connected
+	 0 - closed
+	-2 - bad parameters
+	-3 - statement doesn't exist
+	-4 - not connected
 
 =head2 exists_statement
 
 Checks existence of statement of given name.
 
  Syntax:
-  exists_statement($stmt_name)
+	exists_statement($stmt_name)
 
  Args:
-  $stmt_name [required] - statement name to check
+	$stmt_name [required] - statement name to check
 
  Returns:
-  1 - exists
-  0 - not exists or no statement name given
+	1 - exists
+	0 - not exists or no statement name given
 
 =head2 insert
 
 Performs SQL command (assumes INSERT) and returns number of inserted rows.
 
  Syntax:
-  insert($insert_string)
+	insert($insert_string)
 
  Args:
-  $insert_string [required] - the SQL command (INSERT)
+	$insert_string [required] - the SQL command (INSERT)
 
  Returns:
-  >=0 - number of inserted rows
-  -1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message
-  -2 - bad parameter
-  -3 - not connected
+	>=0 - number of inserted rows
+	-1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message
+	-2 - bad parameter
+	-3 - not connected
 
 =head2 delete
 
 Performs SQL command (assumes DELETE) and returns number of deleted rows.
 
  Syntax:
-  delete($delete_string)
+	delete($delete_string)
 
  Args:
-  $delete_string [required] - the SQL command (DELETE)
+	$delete_string [required] - the SQL command (DELETE)
 
  Returns:
-  >=0 - number of deleted rows
-   -1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message)
-   -2 - bad parameter
-   -3 - not connected
+	>=0 - number of deleted rows
+	 -1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message)
+	 -2 - bad parameter
+	 -3 - not connected
 
 =head2 update
 
 Performs SQL command (assumes UPDATE) and returns number of updated rows.
 
  String:
-  update($update_string)
+	update($update_string)
 
  Args:
-  $update_str [required] - the SQL command (UPDATE)
+	$update_str [required] - the SQL command (UPDATE)
 
  Returns:
-  >=0 - number of updated rows
-   -1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message)
-   -2 - bad parameter
-   -3 - not connected
+	>=0 - number of updated rows
+	 -1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message)
+	 -2 - bad parameter
+	 -3 - not connected
 
 =head2 command
 
 Performs generic command.
 
  String:
-  command($command_string)
+	command($command_string)
 
  Args:
-  $command_string [required] - SQL command
+	$command_string [required] - SQL command
 
  Returns:
-  >0 - ok
-  -1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message)
-  -2 - bad parameter
-  -3 - not connected
+	>0 - ok
+	-1 - sql command failed (check Dsqlstatus, Dcmdstatus, Derror_message)
+	-2 - bad parameter
+	-3 - not connected
 
 =head2 func
 
 Interface to DBH->func().
 
  Syntax:
-  func(@func_params)
+	func(@func_params)
 
  Args:
-  @func_params - parameters for func()
+	@func_params - parameters for func()
 
  Returns:
-  value(s) returned by DBH->func()
+	value(s) returned by DBH->func()
 
 =head2 const
 
 Interface to DBH->constants.
 
  Syntax:
-  const($const_name[, $value])
+	const($const_name[, $value])
 
  Args:
-  $const_name [required] - constant name
-  $value                 - if defined, set constant to this value
+	$const_name [required] - constant name
+	$value		 - if defined, set constant to this value
 
  Returns:
-  constant $const_name value
+	constant $const_name value
 
 =head2 nextval
 
 Returns next value from sequence.
 
  Syntax:
-  nextval($seq_name)
+	nextval($seq_name)
 
  Args:
-  $seq_name [required] - sequence name
+	$seq_name [required] - sequence name
 
  Returns:
-  >0 - next value from sequence
-  -1 - SQL error (see Derror_message)
-  -2 - bad parameters
-  -3 - not connected
+	>0 - next value from sequence
+	-1 - SQL error (see Derror_message)
+	-2 - bad parameters
+	-3 - not connected
 
 =head2 quote
 
@@ -2221,52 +2230,52 @@ Quotes given string(s).
 Note: You should not quote values used in prepared statements.
 
  Syntax:
-  quote(@array)
+	quote(@array)
 
  Args:
-  @array - array of strings to quote
+	@array - array of strings to quote
 
  Returns:
-  array with quoted strings
+	array with quoted strings
 
 =head2 date2db
 
 Formats string (date or datetime) to DB format.
 
  String:
-  date2db([$format_type][, @date_value])
+	date2db([$format_type][, @date_value])
 
  Args:
-  $format_type - DB format type COMMON [default] or PREPARED [for prepared
-   statements]
-  -other parameters are optional, default is now-
-  1. param - date [dd.mm.yyyy] or datetime [dd.mm.yyyy hh:mm:ss] or seconds
-             or ! now (date) !! now (datetime)
-  2. param - minutes
-  3. param - hours
-  4. param - day in month
-  5. param - month (0 will be replaced to 1)
-  6. param - year (if <1000, 1900 will be added)
+	$format_type - DB format type COMMON [default] or PREPARED [for prepared
+	 statements]
+	-other parameters are optional, default is now-
+	1. param - date [dd.mm.yyyy] or datetime [dd.mm.yyyy hh:mm:ss] or seconds
+			 or ! now (date) !! now (datetime)
+	2. param - minutes
+	3. param - hours
+	4. param - day in month
+	5. param - month (0 will be replaced to 1)
+	6. param - year (if <1000, 1900 will be added)
 
  Returns:
-  according to number of arguments without $format_type if given:
-    0 - current datetime
-    1 - input is date(time) string, output date(time)
-    2 - input is month and year, returns date with last day in month
-    3 - date
-   >3 - datetime
-   undef - bad parameters
+	according to number of arguments without $format_type if given:
+		0 - current datetime
+		1 - input is date(time) string, output date(time)
+		2 - input is month and year, returns date with last day in month
+		3 - date
+	 >3 - datetime
+	 undef - bad parameters
 
  Returned: see above
-       undef - bad parameters or not connected
+			 undef - bad parameters or not connected
 
  Note:
-  For driver     Must be set        To
-  Pg             DBDATESTYLE        ISO                   *)
-  Oracle         NLS_DATE_FORMAT    dd.mm.yyyy hh24:mi:ss *)
-  Informix       DBDATE             dmy4.                 *)
-  Sybase         [freedts.conf]
-  mssql          [freedts.conf]
+	For driver	 Must be set			To
+	Pg		 DBDATESTYLE			ISO				*)
+	Oracle	 NLS_DATE_FORMAT		dd.mm.yyyy hh24:mi:ss *)
+	Informix	 DBDATE				dmy4.			*)
+	Sybase	 [freedts.conf]
+	mssql		 [freedts.conf]
 
 *) You can use datestyle parameter of L<"new">.
 
@@ -2275,25 +2284,25 @@ Formats string (date or datetime) to DB format.
 Formats string from DB format.
 
  Syntax:
-  db2date($datetime)
+	db2date($datetime)
 
  Args:
-  $datetime [required] - date(time) from DB
+	$datetime [required] - date(time) from DB
 
  Returns: 
-  - in the scalar context is returned datetime string
-  - in the array context is returned array
-    ($sec, $min, $hour, $day, $mon, $year)
-  undef or () depend on context 
-    bad parameters or not connected
+	- in the scalar context is returned datetime string
+	- in the array context is returned array
+		($sec, $min, $hour, $day, $mon, $year)
+	undef or () depend on context 
+		bad parameters or not connected
 
  Note:
-  For driver     Must be set        To
-  Pg             DBDATESTYLE        ISO                   *)
-  Oracle         NLS_DATE_FORMAT    dd.mm.yyyy hh24:mi:ss *)
-  Informix       DBDATE             dmy4.                 *)
-  Sybase         [freedts/locales.conf]
-  mssql          [freedts/locales.conf]
+	For driver	 Must be set			To
+	Pg		 DBDATESTYLE			ISO				*)
+	Oracle	 NLS_DATE_FORMAT		dd.mm.yyyy hh24:mi:ss *)
+	Informix	 DBDATE				dmy4.			*)
+	Sybase	 [freedts/locales.conf]
+	mssql		 [freedts/locales.conf]
 
 *) You can use datestyle parameter of L<"new">.
 
@@ -2302,14 +2311,14 @@ Formats string from DB format.
 Interface to DBI->trace().
 
  Syntax:
-  trace_on($level, $file)
+	trace_on($level, $file)
 
  Args:
-  $level - trace level
-  $file  - filename to store log
+	$level - trace level
+	$file  - filename to store log
 
  Returns:
-  -nothing-
+	-nothing-
 
 Note: See DBI manpage.
 
@@ -2318,26 +2327,26 @@ Note: See DBI manpage.
 Stops tracing started by trace_on().
 
  Syntax:
-  trace_off()
+	trace_off()
 
  Args:
-  -none-
+	-none-
 
  Returns:
-  -nothing-
+	-nothing-
 
 =head2 _set_app
 
 Sets application prefix.
 
  Syntax:
-  _set_app($prefix)
+	_set_app($prefix)
 
  Args:
-  $prefix - used for statements and cursors
+	$prefix - used for statements and cursors
 
  Returns:
-  -nothing-
+	-nothing-
 
 Note: Default prefix is empty, to set it to this default just call _set_app('').
 
@@ -2346,94 +2355,94 @@ Note: Default prefix is empty, to set it to this default just call _set_app('').
 Sets statistics.
 
  Syntax:
-  set_stat(type[,max_high[,max_all]])
+	set_stat(type[,max_high[,max_all]])
 
  Args:
-  type - type of statistics:
-    none - no statistics
-    sums - only sumaries
-    high - sums & top statements
-    all  - high & all statements
-  max_high - max. number of stored top statements (default: 3)
-  max_all  - max. number of stored all statements (default: 1000)
+	type - type of statistics:
+		none - no statistics
+		sums - only sumaries
+		high - sums & top statements
+		all  - high & all statements
+	max_high - max. number of stored top statements (default: 3)
+	max_all  - max. number of stored all statements (default: 1000)
 
  Returns:
-  -nothing-
+	-nothing-
 
 =head2 reset_stat
 
 Resets statistic counters and arrays.
 
  Syntax:
-  reset_stat()
+	reset_stat()
 
  Args:
-  -none-
+	-none-
 
  Returns:
-  -nothing-
+	-nothing-
 
 =head2 get_stat
 
 Gets module statistics.
 
  Syntax:
-  get_stat()
+	get_stat()
 
  Args:
-  -none-
+	-none-
 
  Returns:
-  array with statistics:
-   field 0 ... total time for statements (sums, high, all)
-   field 1 ... number of performed statements (sums, high, all)
-   field 2 ... number of errors (sums, high, all)
-   field 3 ... reference to array with top statements (high, all)
-   field 4 ... reference to array with all statements (all)
+	array with statistics:
+	 field 0 ... total time for statements (sums, high, all)
+	 field 1 ... number of performed statements (sums, high, all)
+	 field 2 ... number of errors (sums, high, all)
+	 field 3 ... reference to array with top statements (high, all)
+	 field 4 ... reference to array with all statements (all)
 
-  For field 3 and 4: it's an array of references to hashes with these keys:
-   type - action performed (SELECT, INSERT, UPDATE, DELETE, COMMAND, PERFORM,
-          CURSOR_PERFORM, CURSOR_SQL)
-   sql  - SQL command
-   name - statement name (if any)
-   par  - reference to an array with parameters (if any)
-   time - time needed to perform statement
-   error- error string in case of error
+	For field 3 and 4: it's an array of references to hashes with these keys:
+	 type - action performed (SELECT, INSERT, UPDATE, DELETE, COMMAND, PERFORM,
+		CURSOR_PERFORM, CURSOR_SQL)
+	 sql	- SQL command
+	 name - statement name (if any)
+	 par	- reference to an array with parameters (if any)
+	 time - time needed to perform statement
+	 error- error string in case of error
 
 =head2 reset_stat
 
 Resets local statistics (global leaves untouched).
 
  Syntax:
-  reset_stat()
+	reset_stat()
 
  Args:
-  -none-
+	-none-
 
  Returns:
-  -nothing-
+	-nothing-
 
 =head2 test_err
 
 Test last sqlerror.
 
  Syntax:
-  test_err(supp_errs)
+	test_err(supp_errs)
 
  Args:
-  supp_errs (optional)  - list of supp_error (below)
-  supp_error (optional) - supposed error.
-              May be: 1 or TABLE_NOEXIST   - not existing table (objects)
-                      2 or TABLE_EXIST     - table (object) already exists
-                      3 or REC_EXIST       - duplicate value in unique key
-                      4 or SCHEMA_NOTEXIST - not existing schema 
-                      5 or SCHEMA_EXIST    - schema already exists
+	supp_errs (optional)	- list of supp_error (below)
+	supp_error (optional) - supposed error.
+				May be: 1 or TABLE_NOEXIST	 - not existing table (objects)
+					2 or TABLE_EXIST		 - table (object) already exists
+					3 or REC_EXIST		 - duplicate value in unique key
+					4 or SCHEMA_NOTEXIST - not existing schema 
+					5 or SCHEMA_EXIST		 - schema already exists
 
-  4 and 5 are not sopported by some drivers (Oracle, Informix, mysql, mssql).
+	4 and 5 are not sopported by some drivers (Oracle, Informix, mysql, mssql).
 
  Returns:
-  Without args returns error number 1,2,3,4,5 or -1 (unknown).
-  With args return the (args) error number (if equal with any) or 0.
+	Without args returns error number 1,2,3,4,5 or -1 (unknown).
+	With args return the (args) error number (if equal with any) or 0.
 
 
 =head1 AUTHOR
