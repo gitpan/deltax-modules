@@ -1,8 +1,11 @@
-Revision history for Perl extension DeltaX::Database.
+Revision history for Perl extension DeltaX.
+
+3.03  Thu Apr  3 13:57:02 2003
+	- DB tests changed (known MySQL & MS SQL "features")
 
 3.02  Wed Apr  2 16:17:00 2003
-  - added new function test_err to DeltaX::Database
-  - database & session tests enhanced (skip in case of error etc.)
+	- added new function test_err to DeltaX::Database
+	- database & session tests enhanced (skip in case of error etc.)
 
 3.01  Fri Mar  7 22:16:00 2003
 	- added usefull tests
