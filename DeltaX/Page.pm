@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Page;
 #-----------------------------------------------------------------
-# $Id: Page.pm,v 1.1.1.1 2003/02/25 12:53:28 spicak Exp $
+# $Id: Page.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -11,7 +11,7 @@ package DeltaX::Page;
 # (from William Tan, you can see it at pee.sourceforge.net)
 #-----------------------------------------------------------------
 
-$DeltaX::Page::VERSION = '1.0';
+$DeltaX::Page::VERSION = '1.1';
 
 use strict;
 use Carp;
@@ -29,11 +29,18 @@ sub new {
 	croak ("You must supply filename!") unless defined $filename;
 	$self->{filename} = $filename;
 	$self->{error}		= '';
+	$self->{defs}     = [];
 
-	croak ("$pkg created with odd number of parameters - should be of the form option => value")
+	croak ("$pkg created with odd number of parameters".
+		" - should be of the form option => value")
 		if (@_ % 2);
 	for (my $x = 0; $x <= $#_; $x += 2) {
-		$self->{special}{$_[$x]} = $_[$x+1];
+		if ($_[$x] eq '_defs') {
+			$self->{defs} = $_[$x+1];
+		}
+		else {
+			$self->{special}{$_[$x]} = $_[$x+1];
+		}
 	}
 
 	return $self;
@@ -65,8 +72,13 @@ sub compile {
 	my $type = 0;
 	$self->{translated} = '';
 
+	$self->{do_output} = 1;
+	$self->{if_level} = 0;
+	$self->{if_count} = [];
+
 	while ( ($type = $self->_next_token(\$token)) != -1 ) {
 		if ($type == 0) {					# NORMAL BLOCK => print
+			if (!$self->{do_output}) { next; }
 			if ($token =~ /^[\s\n]*$/gs) { next; }
 			$token = _escape($token);
 			$self->{translated} .= "print \"$token\";\n" if $do_prints;
@@ -75,15 +87,23 @@ sub compile {
 			
 			if ($token =~ /^-.*$/s) {		# comment
 				next;
-			} elsif ($token =~ /^=(.*)$/s) {
+			} 
+			elsif ($token =~ /^=(.*)$/s) {
 				$self->{translated} .= "print ($1);\n";
-			} elsif ($token =~ /^!(.*)$/sm) {
+			} 
+			elsif ($token =~ /^!(.*)$/sm) {
+				if (!$self->{do_output}) { next; }
 				# special command
 				my $tmp = $self->_special($1);
 				if (!defined $tmp) { return 0; }
 				$self->{translated} .= $tmp;
+			}
+			elsif ($token =~ /^:(.*)$/s) {
+				# conditional
+				if (!$self->_conditional($1)) { return 0; }
 			} else {
 				# normal code
+				if (!$self->{do_output}) { next; }
 				$self->{translated} .= $token;
 			}
 		}
@@ -163,10 +183,13 @@ sub _special {
 	my @args;
 	if ($2) { @args = split(/,/, $2); }
 	# other special command
-	if (! exists $self->{special}{$1}) {
+	if (! exists $self->{special}{$1} and ! exists $self->{special}{'*'}) {
 		if ($#args > -1) { return "$1($2);\n"; }
 								else { return "$1();\n"; }
 	}
+	my $tmp = $1;
+	$tmp = '*' if !exists $self->{special}{$tmp};
+	unshift @args, $1 if $tmp eq '*';
 	return $self->{special}{$1}->(@args);
 
 }
@@ -180,11 +203,15 @@ sub _include {
 	my $arg  = shift;
 	my $type = shift;
 
+	my @defs = @{$self->{defs}};
+
 	# relative path!
 	if ($arg !~ /^\//) {
 		if ($self->{filename} =~ /^(.*)\/[^\/]*$/) {
 			if ($self->{special}{$type}) {
-				$arg = $self->{special}{$type}->($arg);
+				my @tmp;
+				($arg, @tmp) = $self->{special}{$type}->($arg);
+				push @defs, @tmp;
 			} else {
 				$arg = "$1/$arg";
 			}
@@ -197,8 +224,9 @@ sub _include {
 
 	my @spec;
 	foreach my $s (sort keys %{$self->{special}}) {
-		push @spec, $s, $self->{special}{$s};
-	} 
+		push @spec, $s, $self->{special}{$s}
+	}
+	push @spec, '_defs', \@defs;
 	my $inc = new DeltaX::Page($arg, @spec);
 	if ($inc->compile()) {
 		return "\n#START $type $arg\n".$inc->{translated}."#END $type $arg\n\n\n";
@@ -230,6 +258,52 @@ sub _escape {
 	return $text;
 }
 # END OF escape()
+
+#-----------------------------------------------------------------
+sub _conditional {
+#-----------------------------------------------------------------
+
+	my $self = shift;
+	my $arg  = shift;
+
+	my $command;
+	($command, $arg) = split(/\s/, $arg);
+	
+	if ($command eq 'if') {
+		if (!$self->{do_output}) { return 1; }
+		$self->{if_level}++;
+		$self->{if_count}->[$self->{if_level}]++;
+		if (grep (/^$arg$/, @{$self->{defs}})) {
+			$self->{do_output} = 1;
+		}
+		else {
+			$self->{do_output} = 0;
+		}
+	}
+	elsif ($command eq 'else') {
+		if (!$self->{if_level}) {
+			$self->{error} = "else without if";
+			return;
+		}
+		$self->{do_output} = !$self->{do_output};
+	}
+	elsif ($command eq 'end') {
+		if (!$self->{if_level}) {
+			$self->{error} = "end without if";
+			return;
+		}
+		$self->{do_output} = 1;
+		$self->{if_count}->[$self->{if_level}]--;
+		$self->{if_level}-- if !$self->{if_count}->[$self->{if_level}];
+	}
+	else {
+		$self->{error} = "Uknown conditional '$command' [$arg]";
+		return 0;
+	}
+
+	return 1;
+}
+# EMD OF _conditional()
 
 #-----------------------------------------------------------------
 sub DESTROY {
@@ -273,6 +347,12 @@ DeltaX::Page - Perl module for parsing pages for masser
 Constructor. It has one required parameter - name of file to parse. Other
 parameters are in "directive => sub reference" form (see L<"DIRECTIVES">).
 
+You can define values for conditional output as an array reference to _defs
+argument to new() this way:
+
+ my $page = new DeltaX::Page('somepage.pg', dir1=>\&dir,
+  _defs=>['defined1', 'defined2']);
+
 =head2 compile()
 
 Tries to compile given file to perl code (which can be evaled). See L<"FILE
@@ -302,6 +382,34 @@ everything between <? and ?> is a perl code and is included unchanged
 =item *
 
 <?=token?> is translated to print token; (remember this semicolon!)
+
+=item *
+
+<?:conditional?> is used for conditional output; you can use following:
+
+=over
+
+=item if
+
+for example <?:if defined1?>
+
+=item else
+
+for example:
+
+ <?:if defined1?>
+  some output
+ <?:else?>
+  some other output
+ <?:end?>
+
+=item end
+
+end of block for if/else
+
+=back
+
+Condition instructions can be embedded.
 
 =item *
 
@@ -360,9 +468,15 @@ will be called (arguments will be given to this function - if there are any).
 Everything which is returned by this function is included in the code (function
 must return true value - at least one space, if it returns false, it is detected
 as an error).
+
 You can define directive in new() for include and package too, but this doesn't
 change include or package itself, but module expects that called function
-returns real full path to file to be included.
+returns real full path to file to be included. Other returned values are got as
+additional defines for conditional instructions (see _defs in new()) - but only
+for included file.
+
+There is special directive definition *, which means 'everything other', so if
+undefined directive is found, function assigned to it will be called.
 
 Example:
 
@@ -377,8 +491,13 @@ Example:
   # code to give someone know that JavaScript code must be generated...
   return "$cgi->add_javascript('$javascript_name');";
  }
+
+ sub my_other {
+	my ($directive, @args) = @_;
+	# return code according to $directory
+ }
  
  my $page = new DeltaX::Page('test.pg',include=>\&my_include,
-  javascript=>\&my_javascript);
+  javascript=>\&my_javascript, '*'=>\&my_other);
 
 =back

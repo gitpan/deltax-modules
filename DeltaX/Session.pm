@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Session;
 #-----------------------------------------------------------------
-# $Id: Session.pm,v 1.1.1.1 2003/02/25 12:53:28 spicak Exp $
+# $Id: Session.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -87,36 +87,52 @@ sub _init_db {
 
 	$result = 1;
 	$result = $db->open_statement('DeltaX_Session_INS',
-										"INSERT INTO $tab VALUES(?, ?, ".$db->date2db('PREPARED','??').")")
-		if (! $db->exists_statement('DeltaX_Session_INS'));
+		"INSERT INTO $tab VALUES(?, ?, ".$db->date2db('PREPARED','??').")")
+			if (! $db->exists_statement('DeltaX_Session_INS'));
 	croak ("Cannot initialize statement DeltaX_Session_INS") unless $result > 0;
 
 	$result = 1;
 	$result = $db->open_statement('DeltaX_Session_UPD',
-										"UPDATE $tab SET sdata = ? WHERE sid = ?")
-		if (! $db->exists_statement('DeltaX_Session_UPD'));
+		"UPDATE $tab SET sdata = ? WHERE sid = ?")
+			if (! $db->exists_statement('DeltaX_Session_UPD'));
 	croak ("Cannot initialize statement DeltaX_Session_UPD") unless $result > 0;
 
 	$result = 1;
 	$result = $db->open_statement('DeltaX_Session_DEL',
-										"DELETE FROM $tab WHERE sid = ?")
-		if (! $db->exists_statement('DeltaX_Session_DEL'));
+		"DELETE FROM $tab WHERE sid = ?")
+			if (! $db->exists_statement('DeltaX_Session_DEL'));
 	croak ("Cannot initialize statement DeltaX_Session_DEL") unless $result > 0;
 
 	$result = 1;
 	$result = $db->open_statement('DeltaX_Session_TCH',
-										"UPDATE $tab SET ts = ".$db->date2db('PREPARED','??')." WHERE sid = ?")
-		if (! $db->exists_statement('DeltaX_Session_TCH'));
+		"UPDATE $tab SET ts = ".$db->date2db('PREPARED','??')." WHERE sid = ?")
+			if (! $db->exists_statement('DeltaX_Session_TCH'));
 	croak ("Cannot initialize statement DeltaX_Session_TCH") unless $result > 0;
 
 	$result = 1;
 	$result = $db->open_statement('DeltaX_Session_SEL',
-										"SELECT * FROM $tab WHERE sid = ?")
-		if (! $db->exists_statement('DeltaX_Session_SEL'));
+		"SELECT * FROM $tab WHERE sid = ?")
+			if (! $db->exists_statement('DeltaX_Session_SEL'));
 	croak ("Cannot initialize statement DeltaX_Session_SEL") unless $result > 0;
 
 }
 # END OF _init_db()
+
+#-----------------------------------------------------------------
+sub _destroy_db {
+#-----------------------------------------------------------------
+#
+	my $self = shift;
+	my $db = $self->{db};
+
+	$db->close_statement('DeltaX_Session_INS');
+	$db->close_statement('DeltaX_Session_UPD');
+	$db->close_statement('DeltaX_Session_DEL');
+	$db->close_statement('DeltaX_Session_TCH');
+	$db->close_statement('DeltaX_Session_SEL');
+
+}
+# END OF _destroy_db()
 
 #-----------------------------------------------------------------
 sub _init_file {
@@ -140,10 +156,10 @@ sub _init_shm {
 
 	$self->{cache} = {};
 	if (! tie %{$self->{cache}}, 'IPC::SharedCache', ipc_key => $self->{shm_key},
-																									 load_callback => \&_shm_load,
-																									 validate_callback => \&_shm_validate,
-																									 ipc_segment_size => $self->{shm_segment},
-																									 max_size => $self->{shm_max}) {
+		load_callback => \&_shm_load,
+		validate_callback => \&_shm_validate,
+		ipc_segment_size => $self->{shm_segment},
+		max_size => $self->{shm_max}) {
 		croak ("Cannot connect to shared memory!");
 	} 
 
@@ -208,7 +224,7 @@ sub put {
 	}
 	if ($self->{db}) {
 		my $result = $self->{db}->perform_statement('DeltaX_Session_INS',
-																$sid, $data, $self->{db}->date2db('PREPARED'));
+			$sid, $data, $self->{db}->date2db('PREPARED'));
 		return -5 unless $result > 0;
 	} 
 
@@ -279,7 +295,7 @@ sub _get_db {
 	my $sid = shift;
 
 	my ($result,undef,$data,$ts) = 
-				$self->{db}->perform_statement('DeltaX_Session_SEL', $sid);
+		$self->{db}->perform_statement('DeltaX_Session_SEL', $sid);
 	return undef unless $result > 0;
 	$result = $self->{db}->perform_statement('DeltaX_Session_TCH',
 																$self->{db}->date2db('PREPARED'), $sid);
@@ -288,7 +304,7 @@ sub _get_db {
 	my %tmp;
 	foreach my $tmp (@tmp) {
 		my ($key,$val) = split(/=/,$tmp);
-		$tmp{$key} = $val;
+		$tmp{$key} = $val if $key;
 	}
 	
 	return %tmp;
@@ -304,7 +320,7 @@ sub _get_file {
 
 	return undef unless exists $self->{dbf}->{$sid};
 	my $data = $self->{dbf}->{$sid};
-	my @tmp = split(/\^\^/);
+	my @tmp = split(/\^\^/, $data);
 	my $ts = shift @tmp;
 	my %tmp;
 	foreach my $tmp (@tmp) {
@@ -316,19 +332,20 @@ sub _get_file {
 	
 	return %tmp;
 }
-# END OF _get_db()
+# END OF _get_file()
 
 #-----------------------------------------------------------------
-sub DESTROY {
+sub free {
 #-----------------------------------------------------------------
 #
 	my $self = shift;
 
 	if ($self->{file}) { untie %{$self->{dbf}}; }
 	if ($self->{shm_key}) { untie %{$self->{cache}}; }
+	if ($self->{db}) { $self->_destroy_db(); }
 
 }
-# END OF DESTROY()
+# END OF free()
 
 1;
 
@@ -464,5 +481,10 @@ Returns true if SID exists, otherwise returns false (0).
 
 Returns hash with values assigned to given SID (first and required parameter).
 Returns undef in case of error.
+
+=head2 free()
+
+Frees resources used by module (especially closes opened statements if using
+database).
 
 =cut

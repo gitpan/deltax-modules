@@ -1,8 +1,13 @@
 Revision history for Perl extension DeltaX::Database.
 
-0.01  Tue Feb 25 13:26:10 2003
-	- original version; created by h2xs 1.21 with options
-		-X DeltaX::Database
+3.01  Fri Mar  7 22:16:00 2003
+	- added usefull tests
+	- added default directive to DeltaX::Page
+	- added conditional (if, else, end) to DeltaX::Page
 
 3.00  Tue Feb 25 13:26:10 2003
 	- first public release
+
+0.01  Tue Feb 25 13:26:10 2003
+	- original version; created by h2xs 1.21 with options
+		-X DeltaX::Database

@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Language;
 #-----------------------------------------------------------------
-# $Id: Language.pm,v 1.1.1.1 2003/02/25 12:53:28 spicak Exp $
+# $Id: Language.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -76,10 +76,12 @@ sub read {
 			}
 		} else {
 			my ($key, $val) = split(/$sep/, $_, 2);
+			next if !$key;
+			$val = $val ? $val : '';
 			if (exists $ret{$key}) {
 				push @{$self->{conflicts}}, $key;
 			}
-			if ($val =~ /^%/) {
+			if ($val and $val =~ /^%/) {
 				if (exists $ret{substr($val, 1)}) {
 					$val = $ret{substr($val, 1)};
 				}
@@ -216,7 +218,7 @@ DeltaX::Language - Perl module for reading language files
  my $texts = $lang_file->read();
  my @conflicts = $lang_file->get_conflicts();
 
- print $texts{'text_id'};
+ print $texts->{'text_id'};
 
 =head1 FUNCTIONS
 
