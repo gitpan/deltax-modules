@@ -1,14 +1,14 @@
 #-----------------------------------------------------------------
 package DeltaX::Trace;
 #-----------------------------------------------------------------
-# $Id: Trace.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
+# $Id: Trace.pm,v 1.4 2003/05/16 08:17:16 martin Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
 # Perl.
 #-----------------------------------------------------------------
 
-$DeltaX::Trace::VERSION = '1.0';
+$DeltaX::Trace::VERSION = '1.1';
 
 use Exporter;
 use Carp;
@@ -29,7 +29,8 @@ use vars qw(@ISA @EXPORT @EXPORT_OK %options);
 	trace_debug_file => 1,
 	trace_debug_std  => 0,
 	_special				 => '',
-	trace_pid				 => 0
+	trace_pid				 => 0,
+        trace_stack      => 0,
 ); 
 
 sub trace_set {
@@ -108,21 +109,26 @@ sub trace {
 	while (@_) { $msg = $msg . ' ' . shift; }
 	my $called = '';
 	if ($l_msub and ($msub ne $l_msub)) {
-		$called = " (... called from $l_msub)";
+	        $msg = "$title at $l_msub ($l_mfile) [$l_mline]: $msg (... called from $msub [$mline])";
 	}
-	$msg = "$title at $msub ($mfile) [$mline]: $msg $called";
+        else {
+	        $msg = "$title at $msub ($mfile) [$mline]: $msg";
+        }
 
 	# get the stack for error
-	#my @stack = get_stack() if $mtype eq 'E';
+	my @stack = get_stack() if $options->{trace_stack};
 
 	# stderr output
 	if ($to_std)	{ print STDERR "$msg\n"; }
 	if ($to_file) { 
 		if (open OUT, ">>".$options->{trace_file} ) {
 			print OUT scalar localtime, " $msg\n";
-			#if ($mtype eq 'E') { # print the stack
-			#	print OUT "  *".join("\n	*", @stack)."\n";
-			#}
+			if ($options->{trace_stack} && $mtype eq 'E' ||
+			        $options->{trace_stack} > 1 && $mtype eq 'W' ||
+			        $options->{trace_stack} > 2 && $mtype eq 'I' ||
+			        $options->{trace_stack} > 3 && $mtype eq 'D') { # print the stack
+				print OUT "  *".join("\n	*", @stack)."\n";
+			}
 			close OUT;
 		}
 	}
@@ -267,6 +273,16 @@ If set, debug messages will be written to stderr (default is false).
 =item trace_pid
 
 Is set, process ID will be attached to every message.
+
+=item trace_stack
+
+Is set, stack will be printed:
+        1 with ERROR's
+        2 with E and W
+        3 with E, W and I
+        4 with E, W, I and D
+
+0 stack won't be printed.
 
 =back
 

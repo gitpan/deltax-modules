@@ -1,5 +1,15 @@
 Revision history for Perl extension DeltaX.
 
+3.04  Fri May 16 12:54:00 2003
+  - DeltaX::Database
+    - new function test_err()
+    - small warning fixes (_trace, Dstr_command)
+    - fix in open_statement (SELECT with new line et the beginning was not
+      recognized as SELECT command)
+  - DeltaX::Trace
+    - trace output fixed (called from was in a wrong place)
+    - trace output (see trace_stack in docs)
+
 3.03  Thu Apr  3 13:57:02 2003
 	- DB tests changed (known MySQL & MS SQL "features")
 

@@ -6,7 +6,7 @@
 # Author		: Martin Kula, 1999 <martin.kula@deltaes.com>
 #							to object model rewritten by
 #							Jakub Spicak <jakub.spicak@deltaes.cz>
-# $Id: Database.pm,v 1.4 2003/04/02 15:30:57 martin Exp $
+# $Id: Database.pm,v 1.12 2003/05/16 10:49:25 spicak Exp $
 #
 
 package DeltaX::Database;
@@ -35,7 +35,7 @@ use Exporter;
 #########################################################################
 # Setting global module variables
 #########################################################################
-$DeltaX::Database::VERSION = '3.1';				# Module version
+$DeltaX::Database::VERSION = '3.3';				# Module version
 
 #########################################################################
 # Procedure declaration
@@ -584,7 +584,7 @@ sub open_statement {
 	        return -2;
         }
 
-	my $is_select = 1 if uc($sql_command) =~ /^[	]*SELECT[  \n]/;
+	my $is_select = 1 if uc($sql_command) =~ /^[	\n]*SELECT[  \n]/;
 	my @sqlc_tmp = $sql_command =~ /[\?\!]/g;
 	my $number_bval = scalar @sqlc_tmp;
 	$sql_command =~ s/\!/\?/g;
@@ -1513,9 +1513,9 @@ sub _trace {
 	$errnum = " [$errnum]" if $errnum; 
 	my $msg = "DB$errnum: $Derror_message";
 	if ($self->{trace} > 1) {
-		$msg .= " ($Dstr_command)";
+		$msg .= " ($Dstr_command)" if defined $Dstr_command;
 		if ($#_ >= 0) { # doplneni dat
-			$msg .= " [data: ".join(',',@_)."]";
+			$msg .= " [data: ".join(',',map {defined $_ ? $_ : 'undef'} @_)."]";
 		}
 	}
 	trace('E', $msg);
@@ -1667,23 +1667,29 @@ sub test_err {
 
         my $self = shift;
         my $teste = shift;
+        my @teste = ();
         my $rete = -1;
 
-        if (defined $teste) {
+        while (defined $teste) {
                 $teste = uc($teste);
-                if ($teste eq 'TABLE_NOEXIST' or $teste eq '1') { $teste = 1;}
-                elsif ($teste eq 'TABLE_EXIST' or $teste eq '2') { $teste = 2;}
-                elsif ($teste eq 'REC_EXIST' or $teste eq '3') { $teste = 3;}
+                if ($teste eq 'TABLE_NOTEXIST' or $teste eq '1') { push @teste, 1;}
+                elsif ($teste eq 'TABLE_EXIST' or $teste eq '2') { push @teste, 2;}
+                elsif ($teste eq 'REC_EXIST' or $teste eq '3') { push @teste, 3;}
+                elsif ($teste eq 'SCHEMA_NOTEXIST' or $teste eq '4') { push @teste, 4;}
+                elsif ($teste eq 'SCHEMA_EXIST' or $teste eq '5') { push @teste, 5;}
                 else { return 0; }
+                $teste = shift;
         }
-
+        no warnings "uninitialized";
         if ($self->{driver} eq 'Pg') {
-                if ($Dsqlstatus eq '7' && $Derror_message =~ /does not exist/) { $rete = 1; }
+                if ($Dsqlstatus eq '7' && $Derror_message =~ /(Relation|table) .* does not exist/) { $rete = 1; }
                 elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Relation .* already exists/) { $rete = 2; }
                 elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Cannot insert a duplicate key/) { $rete = 3; }
+                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(Namespace|Schema) .* does not exist/) { $rete = 4; }
+                elsif ($Dsqlstatus eq '7' && $Derror_message =~ /namespace .* already exists/) { $rete = 5; }
         }
         elsif ($self->{driver} eq 'Oracle') {
-                if ($Dsqlstatus eq '942') { $rete = 1; }
+                if ($Dsqlstatus eq '942' || $Dsqlstatus eq '4043') { $rete = 1; }
                 elsif ($Dsqlstatus eq '955') { $rete = 2; }
                 elsif ($Dsqlstatus eq '1') { $rete = 3; }
         }
@@ -1693,9 +1699,12 @@ sub test_err {
                 elsif ($Dsqlstatus eq '-239') { $rete = 3; }
         }
         elsif ($self->{driver} eq 'DB2') {
-                if ($Dsqlstatus eq '-204' || ($Dsqlstatus eq '-99999' && $Derror_message =~ /CLI0125E/)) { $rete = 1; }
-                elsif ($Dsqlstatus eq '-601') { $rete = 2; }
+                if (($Dsqlstatus eq '-204' && $Derror_message =~ /"[^\.]+\.[^\.]+"/)
+                        || ($Dsqlstatus eq '-99999' && $Derror_message =~ /CLI0125E/)) { $rete = 1; }
+                elsif ($Dsqlstatus eq '-601' && $Derror_message =~ /type "TABLE"/) { $rete = 2; }
                 elsif ($Dsqlstatus eq '-803') { $rete = 3; }
+                elsif ($Dsqlstatus eq '-204' && $Derror_message =~ /"[^\.]+"/) { $rete = 4; }
+                elsif ($Dsqlstatus eq '-601' && $Derror_message =~ /type "SCHEMA"/) { $rete = 5; }
         }
         elsif ($self->{driver} eq 'mysql') {
                 if ($Dsqlstatus eq '1051' || $Dsqlstatus eq '1146') { $rete = 1; }
@@ -1710,15 +1719,17 @@ sub test_err {
         elsif ($self->{driver} eq 'Solid') {
                 if ($Dsqlstatus eq '13011') { $rete = 1; }
                 elsif ($Dsqlstatus eq '13013') { $rete = 2; }
-                elsif ($Dsqlstatus eq '10005') { $rete = 3; }
+                elsif ($Dsqlstatus eq '10005' || $Dsqlstatus eq '10033') { $rete = 3; }
+                elsif ($Dsqlstatus eq '13141' || $Dsqlstatus eq '13046') { $rete = 4; }
+                elsif ($Dsqlstatus eq '13142') { $rete = 5; }
         }
         else {
-                return -1 if !defined $teste;
+                return -1 if !scalar @teste;
                 return 0;
         }
 
-        return $rete if ! defined $teste;
-        return ($rete == $teste ? $rete : 0);
+        return $rete if ! scalar @teste;
+        return (grep({$rete == $_} @teste) ? $rete : 0);
         
 } # test_err
 
@@ -2402,17 +2413,22 @@ Resets local statistics (global leaves untouched).
 Test last sqlerror.
 
  Syntax:
-  test_err(supp_error)
+  test_err(supp_errs)
 
  Args:
+  supp_errs (optional)  - list of supp_error (below)
   supp_error (optional) - supposed error.
-              May be: 1 or TABLE_NOEXIST - no existing table (objects)
-                      2 or TABLE_EXIST   - table (object) already exists
-                      3 or REC_EXIST     - duplicate value in unique key
+              May be: 1 or TABLE_NOEXIST   - not existing table (objects)
+                      2 or TABLE_EXIST     - table (object) already exists
+                      3 or REC_EXIST       - duplicate value in unique key
+                      4 or SCHEMA_NOTEXIST - not existing schema 
+                      5 or SCHEMA_EXIST    - schema already exists
+
+  4 and 5 are not sopported by some drivers (Oracle, Informix, mysql, mssql).
 
  Returns:
-  Without args returns error number 1,2,3 or -1 (unknown).
-  With args return the (args) error number (if equal) or 0.
+  Without args returns error number 1,2,3,4,5 or -1 (unknown).
+  With args return the (args) error number (if equal with any) or 0.
 
 
 =head1 AUTHOR
