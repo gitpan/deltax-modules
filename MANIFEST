@@ -1,0 +1,16 @@
+Artistic.txt
+DeltaX/Config.pm
+DeltaX/Config.pod
+DeltaX/Database.pm
+DeltaX/Language.pm
+DeltaX/Page.pm
+DeltaX/Session.pm
+DeltaX/Trace.pm
+Changes
+TO_DO
+MANIFEST
+Makefile.PL
+README
+test.pl
+CREDITS
+DISCLAIMER
