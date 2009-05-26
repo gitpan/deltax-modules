@@ -1,4 +1,4 @@
-DeltaX modules version 3.00
+DeltaX modules version 3.08
 ===========================
 
 This is collection of DeltaX modules written especially for masser (see
@@ -35,4 +35,5 @@ This package is free software; you can use it under "Artistic License" from
 Perl.
 
 Copyright (C) 2002-2003 DELTA E.S., Czech Republic (www.deltaes.cz)
+Copyright (C) 2009, Radas s.r.o., Czech Republic (www.radas-atc.cz)
 

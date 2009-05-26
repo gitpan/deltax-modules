@@ -1,5 +1,12 @@
 Revision history for Perl extension DeltaX.
 
+3.08  Mon May 25 16:09:00 2009
+  - DeltaX::Config: read lines untaint
+  - DeltaX::Trace: line number inclusion
+  - DeltaX::Database: Informix number handling
+  - DeltaX::Database: PostgreSQL error check bugs corrected
+  - DeltaX::Database: ping() now works correctly, test added
+
 3.07  Mon Oct 13 08:31:00 2003
   - additional BLOB & CLOB handling in open_statement for Oracle
 

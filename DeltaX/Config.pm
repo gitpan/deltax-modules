@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Config;
 #-----------------------------------------------------------------
-# $Id: Config.pm,v 1.1 2003/03/17 13:01:36 spicak Exp $
+# $Id: Config.pm,v 1.2 2003/10/30 15:51:44 spicak Exp $
 # 
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -129,6 +129,15 @@ sub _read_file {
 			$val =~ s/^[ ]*//g;
 			$val =~ s/[ ]*$//g;
 			if (length($key) < 1) { next; }
+      # untaint!
+      if ($key =~ /^([-\w.]+)$/) {
+        $key = $1;
+      }
+      else {
+        $self->{error} = "Invalid key '$key' in file!";
+        return undef;
+      }
+
 			my $tmp = '$ret{\''.join("'}{'", split(/\./, $key)).'\'}';
 			$place = eval "\\($tmp)";
 			$$place = $val;

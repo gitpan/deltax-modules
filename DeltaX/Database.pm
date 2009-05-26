@@ -62,6 +62,7 @@ sub new {
 	$self->{stat_type} = 'none';
 	$self->{stat_max_high} = 3;
 	$self->{stat_max_all} = 1000;
+	$self->{imix_number_correct} = 0;
 
 	croak ("DeltaX::Database::new called with odd number of parameters -".
 			 " should be of the form field => value")
@@ -288,6 +289,15 @@ sub select {
 	if ($self->{driver} eq 'mssql') {
 		@ret_array = map { y/\x9a\x9e\x8a\x8e/¹¾©®/; $_ } @ret_array;
 	}
+	# correct numbers for Informix
+  if ($self->{driver} eq 'Informix' and $self->{imix_number_correct}) {
+		my @types = @{$statement->{TYPE}};
+		for (my $i=0; $i<=$#ret_array; $i++) {
+			next if $types[$i] != DBI::SQL_DECIMAL;
+			next if !defined $ret_array[$i];
+			$ret_array[$i] += 0;
+		}
+	}
 
 	$self->_stat_end('OK');
 	return ($ret_rows, @ret_array);
@@ -511,6 +521,15 @@ sub fetch_cursor {
 	# convert data for MS SQL
 	if ($self->{driver} eq 'mssql') {
 		@ret_array = map { y/\x9a\x9e\x8a\x8e/¹¾©®/; $_ } @ret_array;
+	}
+	# correct numbers for Informix
+	if ($self->{driver} eq 'Informix' and $self->{imix_number_correct}) {
+		my @types = @{$self->{cursors}->{$cursor_name}->[5]};
+		for (my $i=1; $i<=$#ret_array; $i++) {
+			next if $types[$i-1] != DBI::SQL_DECIMAL;
+			next if !defined $ret_array[$i];
+			$ret_array[$i] += 0;
+		}
 	}
 
 	return @ret_array;
@@ -762,6 +781,14 @@ sub perform_statement {
 	#Dtransaction_end($sid, 1) if ! $Dtransaction[$sid];
 	$self->_stat_end('OK');
 	if ($self->{statements}->{$statement_name}->[3]) {	 # is_select
+		if ($self->{driver} eq 'Informix' and $self->{imix_number_correct}) {
+			my @types = @{$statement->{TYPE}};
+			for (my $i=0; $i<=$#ret_array; $i++) {
+				next if $types[$i] != DBI::SQL_DECIMAL;
+				next if !defined $ret_array[$i];
+				$ret_array[$i] += 0;
+			}
+		}
 		return ($num_rows, @ret_array);
 	}
 	else {
@@ -1398,7 +1425,9 @@ sub db2date {
 sub ping {
 	my $self = shift;
 
-	return $self->{conn}->ping();
+	my $result = $self->{conn}->ping();
+	return 1 if $result eq '0 but true';
+	return $result;
 }
 
 ###########################################################################
@@ -1695,11 +1724,11 @@ sub test_err {
 	}
 	no warnings "uninitialized";
 	if ($self->{driver} eq 'Pg') {
-		if ($Dsqlstatus eq '7' && $Derror_message =~ /(Relation|table) .* does not exist/) { $rete = 1; }
-		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Relation .* already exists/) { $rete = 2; }
-		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /Cannot insert a duplicate key/) { $rete = 3; }
-		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(Namespace|Schema) .* does not exist/) { $rete = 4; }
-		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /namespace .* already exists/) { $rete = 5; }
+		if ($Dsqlstatus eq '7' && $Derror_message =~ /(Relation|relation|table) .* does not exist/) { $rete = 1; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(R|r)elation .* already exists/) { $rete = 2; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /duplicate key/) { $rete = 3; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(Namespace|Schema|schema) .* does not exist/) { $rete = 4; }
+		elsif ($Dsqlstatus eq '7' && $Derror_message =~ /(namespace|schema) .* already exists/) { $rete = 5; }
 	}
 	elsif ($self->{driver} eq 'Oracle') {
 		if ($Dsqlstatus eq '942' || $Dsqlstatus eq '4043') { $rete = 1; }
@@ -1745,6 +1774,16 @@ sub test_err {
 	return (grep({$rete == $_} @teste) ? $rete : 0);
 	
 } # test_err
+
+###########################################################################
+sub imix_number_correct {
+
+	my $self = shift;
+	my $arg = shift;
+
+	$self->{imix_number_correct} = $arg;
+
+} # imix_number_correct()
 
 #######################################################################
 # Initialization code of module

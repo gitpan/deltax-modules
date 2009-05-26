@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------
 package DeltaX::Trace;
 #-----------------------------------------------------------------
-# $Id: Trace.pm,v 1.4 2003/05/16 08:17:16 martin Exp $
+# $Id: Trace.pm,v 1.5 2004/10/20 10:04:35 martin Exp $
 #
 # (c) DELTA E.S., 2002 - 2003
 # This package is free software; you can use it under "Artistic License" from
@@ -73,6 +73,7 @@ sub trace {
 	}
 	if ($options->{trace_pid}) {
 		$mfile .= " ($$)";
+		$l_mfile .= " ($$)";
 	}
 
 	my $to_file = 0;

@@ -32,7 +32,7 @@ sub skip {
 	last SKIP;
 }
 
-print "1..45\n";
+print "1..46\n";
 
 use DeltaX::Database;
 
@@ -58,6 +58,8 @@ SKIP: {
 	skip ("Connection to database failed: ".$DeltaX::Database::Derror_message, 43)
 		if !ref $db;
 	ok ($db->isa('DeltaX::Database'));
+
+	ok($db->ping());
 
 	# create test table
 	my $result = $db->command("CREATE TABLE deltax_db_test".
