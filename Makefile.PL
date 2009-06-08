@@ -13,7 +13,7 @@ Please, give me some information for tests...
 
 ENT
 
-my $do_tests = prompt("Do you want to setup database tests [y/n]?", "y");
+my $do_tests = prompt("Do you want to setup database tests [y/n]?", "n");
 if (lc($do_tests) ne 'y') {
 	print "\n*** Database tests will be skipped ***\n\n";
 }

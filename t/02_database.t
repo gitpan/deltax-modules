@@ -32,7 +32,7 @@ sub skip {
 	last SKIP;
 }
 
-print "1..46\n";
+print "1..45\n";
 
 use DeltaX::Database;
 

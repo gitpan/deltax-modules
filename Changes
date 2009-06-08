@@ -1,5 +1,9 @@
 Revision history for Perl extension DeltaX.
 
+3.09  Mon Jun 08 09:09:16 2009
+  - corrected tests
+  - Makefile.PL: DB test is now switched off by default
+
 3.08  Mon May 25 16:09:00 2009
   - DeltaX::Config: read lines untaint
   - DeltaX::Trace: line number inclusion
