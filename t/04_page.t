@@ -35,5 +35,6 @@ if (open INF, "t/04_page1.out") {
 	while (<INF>) { $out .= $_; }
 	close INF;
 }
+print $page->{translated};
 ok($page->{translated} eq $out);
 

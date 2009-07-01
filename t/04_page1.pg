@@ -16,3 +16,7 @@ def1
 <?:else?>
 defx
 <?:end?>
+
+<?:for my $x in (@neco)?>
+dddd
+<?:done?>

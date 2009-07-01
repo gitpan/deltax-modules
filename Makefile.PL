@@ -71,7 +71,8 @@ WriteMakefile(
 	'VERSION_FROM' => 'DeltaX/Database.pm',
 	'PREREQ_PM'		=> {
 		DBI => 0,
-		Time::HiRes => 0
+		Time::HiRes => 0,
+		GDBM_File => 0
 	}, # e.g., Module::Name => 1.1
 	realclean => { FILES => 't/.dbconf'}
 );

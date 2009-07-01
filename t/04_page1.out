@@ -6,3 +6,6 @@ print ('some text');
 
 
 print "\ndef1\n";
+for my $x in (@neco) {
+print "\ndddd\n";
+}

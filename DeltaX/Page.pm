@@ -11,7 +11,7 @@ package DeltaX::Page;
 # (from William Tan, you can see it at pee.sourceforge.net)
 #-----------------------------------------------------------------
 
-$DeltaX::Page::VERSION = '1.1';
+$DeltaX::Page::VERSION = '1.2';
 
 use strict;
 use Carp;
@@ -55,15 +55,20 @@ sub compile {
 	my $do_prints = shift;
 	if (!defined $do_prints) { $do_prints = 1; }
 
-	# read file
-	if (! open (INF, $self->{filename})) {
-		$self->{error} = "Cannot open file: $!";
-		return 0;
+	if ($self->{filename} =~ /^string:/) {
+		$self->{buffer} = substr($self->{filename}, 7);
 	}
+	else {
+		# read file
+		if (! open (INF, $self->{filename})) {
+			$self->{error} = "Cannot open file: $!";
+			return 0;
+		}
 
-	$self->{buffer} = '';
-	while (<INF>) { $self->{buffer} .= $_; }
-	close INF;
+		$self->{buffer} = '';
+		while (<INF>) { $self->{buffer} .= $_; }
+		close INF;
+	}
 
 	$self->{cursor} = 0;
 	$self->{blength} = length($self->{buffer});
@@ -89,6 +94,7 @@ sub compile {
 				next;
 			} 
 			elsif ($token =~ /^=(.*)$/s) {
+				if (!$self->{do_output}) { next; }
 				$self->{translated} .= "print ($1);\n";
 			} 
 			elsif ($token =~ /^!(.*)$/sm) {
@@ -99,8 +105,8 @@ sub compile {
 				$self->{translated} .= $tmp;
 			}
 			elsif ($token =~ /^:(.*)$/s) {
-				# conditional
-				if (!$self->_conditional($1)) { return 0; }
+				# command
+				if (!$self->_command($1)) { return 0; }
 			} else {
 				# normal code
 				if (!$self->{do_output}) { next; }
@@ -205,9 +211,11 @@ sub _include {
 
 	my @defs = @{$self->{defs}};
 
+	my $am_i_string = $self->{filename} =~ /^string:/;
+
 	# relative path!
-	if ($arg !~ /^\//) {
-		if ($self->{filename} =~ /^(.*)\/[^\/]*$/) {
+	if ($arg !~ /^\// || $am_i_string) {
+		if ($self->{filename} =~ /^(.*)\/[^\/]*$/ || $am_i_string) {
 			if ($self->{special}{$type}) {
 				my @tmp;
 				($arg, @tmp) = $self->{special}{$type}->($arg);
@@ -229,7 +237,12 @@ sub _include {
 	push @spec, '_defs', \@defs;
 	my $inc = new DeltaX::Page($arg, @spec);
 	if ($inc->compile()) {
-		return "\n#START $type $arg\n".$inc->{translated}."#END $type $arg\n\n\n";
+		if (!$am_i_string) {
+			return "\n#START $type $arg\n".$inc->{translated}."#END $type $arg\n\n\n";
+		}
+		else {
+			return "\n#START $type\n".$inc->{translated}."#END $type\n\n\n";
+		}
 	} else {
 		$self->{error} = "include: unable to compile '$arg': ". $inc->get_error();
 		return undef;
@@ -260,14 +273,15 @@ sub _escape {
 # END OF escape()
 
 #-----------------------------------------------------------------
-sub _conditional {
+sub _command {
 #-----------------------------------------------------------------
 
 	my $self = shift;
 	my $arg  = shift;
 
 	my $command;
-	($command, $arg) = split(/\s/, $arg);
+	my @other_args;
+	($command, $arg, @other_args) = split(/\s/, $arg);
 	
 	if ($command eq 'if') {
 		if (!$self->{do_output}) { return 1; }
@@ -296,6 +310,19 @@ sub _conditional {
 		$self->{if_count}->[$self->{if_level}]--;
 		$self->{if_level}-- if !$self->{if_count}->[$self->{if_level}];
 	}
+	elsif ($command eq 'for') {
+		if (!$self->{do_output}) { return 1; }
+		$self->{for_level}++;
+		$self->{translated} .= "for $arg ".join(' ', @other_args)." {\n";
+	}
+	elsif ($command eq 'done') {
+		if (!$self->{for_level}) {
+			$self->{error} = "done without for";
+			return;
+		}
+		$self->{translated} .= "}\n";
+		$self->{for_level}--;
+	}
 	else {
 		$self->{error} = "Uknown conditional '$command' [$arg]";
 		return 0;
@@ -303,7 +330,7 @@ sub _conditional {
 
 	return 1;
 }
-# EMD OF _conditional()
+# END OF _command()
 
 #-----------------------------------------------------------------
 sub DESTROY {
@@ -344,8 +371,11 @@ DeltaX::Page - Perl module for parsing pages for masser
 
 =head2 new()
 
-Constructor. It has one required parameter - name of file to parse. Other
-parameters are in "directive => sub reference" form (see L<"DIRECTIVES">).
+Constructor. It has one required parameter - name of file to parse. This name
+can be prefixed with string: so module it uses as code itself, without reading
+the file.
+
+Other parameters are in "directive => sub reference" form (see L<"DIRECTIVES">).
 
 You can define values for conditional output as an array reference to _defs
 argument to new() this way:
@@ -385,7 +415,7 @@ everything between <? and ?> is a perl code and is included unchanged
 
 =item *
 
-<?:conditional?> is used for conditional output; you can use following:
+<?:directive?> is used for conditional and looped output; you can use following:
 
 =over
 
@@ -406,6 +436,18 @@ for example:
 =item end
 
 end of block for if/else
+
+=item for..done
+
+for example:
+
+ <?:for ...perl foreach syntax...?>
+ ...
+ <?:done?>
+
+ <?:for my $item (@list)?>
+ ...
+ <?:done?>
 
 =back
 
