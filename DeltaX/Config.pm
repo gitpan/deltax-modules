@@ -11,7 +11,6 @@ $DeltaX::Config::VERSION = '1.0';
 
 use strict;
 use Carp;
-use DeltaX::Database;
 
 #-----------------------------------------------------------------
 sub new {

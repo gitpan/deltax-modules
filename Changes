@@ -1,5 +1,8 @@
 Revision history for Perl extension DeltaX.
 
+3.11  Thu Nov 19 14:24:00 2009
+  - removed DeltaX::Config dependency on DeltaX::Database
+
 3.10  Thu Jul 01 15:04:16 2009
   - added GDBM_File as requirement
   - DeltaX::Page: new directive :for .. :done
