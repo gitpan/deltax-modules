@@ -63,6 +63,7 @@ sub new {
 	$self->{stat_max_high} = 3;
 	$self->{stat_max_all} = 1000;
 	$self->{imix_number_correct} = 0;
+        $self->{use_sequences} = 0;     # Informix server 1-use internal sequences 0-use external sequences
 
 	croak ("DeltaX::Database::new called with odd number of parameters -".
 			 " should be of the form field => value")
@@ -1055,6 +1056,12 @@ sub nextval {
 		return -1 if $sqlresult[0] < 1;
 		return $sqlresult[1];
 	}
+        elsif ($self->{use_sequences} && $self->{driver} eq 'Informix') {
+                @sqlresult = $self->select("select $seq_name.nextval from kdb_sequences ".
+                        "where sequence_name = 'dual'");
+                return -1 if $sqlresult[0] < 1;
+                return $sqlresult[1];
+        }
 	elsif ($self->{driver} eq 'Oracle') {
 		@sqlresult = $self->select("select $seq_name.nextval from dual");
 		return -1 if $sqlresult[0] < 1;

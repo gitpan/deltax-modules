@@ -1,5 +1,8 @@
 Revision history for Perl extension DeltaX.
 
+3.12  Mon Dec 07 15:31:00 2009
+  - minor informix improvement
+
 3.11  Thu Nov 19 14:24:00 2009
   - removed DeltaX::Config dependency on DeltaX::Database
 
