@@ -287,12 +287,24 @@ sub _command {
 		if (!$self->{do_output}) { return 1; }
 		$self->{if_level}++;
 		$self->{if_count}->[$self->{if_level}]++;
-		if (grep (/^$arg$/, @{$self->{defs}})) {
-			$self->{do_output} = 1;
-		}
-		else {
-			$self->{do_output} = 0;
-		}
+                my $test = $arg;
+                if ($arg =~ /^!/) {
+                  $test = substr($test, 1);
+  		  if (grep (/^$test$/, @{$self->{defs}})) {
+		    $self->{do_output} = 0;
+		  }
+		  else {
+		    $self->{do_output} = 1;
+  		  }
+                }
+                else {
+  		  if (grep (/^$arg$/, @{$self->{defs}})) {
+		    $self->{do_output} = 1;
+		  }
+		  else {
+		    $self->{do_output} = 0;
+  		  }
+                }
 	}
 	elsif ($command eq 'else') {
 		if (!$self->{if_level}) {

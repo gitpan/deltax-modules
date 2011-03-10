@@ -1,5 +1,8 @@
 Revision history for Perl extension DeltaX.
 
+3.13  Thu Mar 10 11:22:00 2011
+  - in DeltaX::Page <?:if !FOO?> enabled
+
 3.12  Mon Dec 07 15:31:00 2009
   - minor informix improvement
 
