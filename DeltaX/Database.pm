@@ -35,7 +35,7 @@ use Exporter;
 #########################################################################
 # Setting global module variables
 #########################################################################
-$DeltaX::Database::VERSION = '3.13';				# Module version
+$DeltaX::Database::VERSION = '3.3';				# Module version
 
 #########################################################################
 # Procedure declaration

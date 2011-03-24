@@ -1,5 +1,8 @@
 Revision history for Perl extension DeltaX.
 
+3.14  Thu Mar 24 11:33:00 2011
+  - wrong cpan version
+
 3.13  Thu Mar 10 11:22:00 2011
   - in DeltaX::Page <?:if !FOO?> enabled
 

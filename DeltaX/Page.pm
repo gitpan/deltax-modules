@@ -11,7 +11,7 @@ package DeltaX::Page;
 # (from William Tan, you can see it at pee.sourceforge.net)
 #-----------------------------------------------------------------
 
-$DeltaX::Page::VERSION = '1.2';
+$DeltaX::Page::VERSION = '1.3';
 
 use strict;
 use Carp;
